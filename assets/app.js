@@ -4,10 +4,18 @@
   var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
 
+  // Reloj del viaje. Para ver cómo se verá un día, agrega ?hoy=2027-02-26 o ?hoy=2027-02-26T14:30 (hora de Mérida).
+  var shift = 0;
+  try {
+    var q = new URLSearchParams(location.search).get('hoy');
+    if (q && /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?$/.test(q)) shift = new Date((q.length === 10 ? q + 'T09:00' : q) + ':00-06:00').getTime() - Date.now();
+  } catch (e) {}
+  var now = window.tripNow = function () { return Date.now() + (shift || 0); };
+
   // Cuenta regresiva al rompehielos (hora de Mérida, UTC-6)
   var target = new Date('2027-02-25T17:00:00-06:00').getTime();
   function tick() {
-    var ms = target - Date.now();
+    var ms = target - now();
     if (ms <= 0) {
       $('count').hidden = true;
       $('countTo').textContent = ms > -6 * DAY ? '¡Ya estamos en Mérida!' : 'Qué viaje. Hasta la próxima.';
@@ -21,14 +29,14 @@
   tick(); setInterval(tick, 1000);
 
   // Día de hoy en la tira de la semana (fecha en Mérida)
-  var hoy = new Date(Date.now() - 6 * 36e5).toISOString().slice(0, 10);
+  var hoy = new Date(now() - 6 * 36e5).toISOString().slice(0, 10);
   [].forEach.call(document.querySelectorAll('#week .day'), function (d) {
     if (d.getAttribute('data-d') === hoy) d.classList.add('today');
   });
 
   // Fechas límite
   [].forEach.call(document.querySelectorAll('.due[data-due]'), function (el) {
-    var left = Math.ceil((new Date(el.getAttribute('data-due') + 'T23:59:59-06:00').getTime() - Date.now()) / DAY);
+    var left = Math.ceil((new Date(el.getAttribute('data-due') + 'T23:59:59-06:00').getTime() - now()) / DAY);
     var lbl = el.getAttribute('data-label');
     if (left < 1) { el.textContent = 'venció el ' + lbl; el.classList.add('late'); }
     else el.textContent = 'antes del ' + lbl + ' · ' + (left === 1 ? 'último día' : left + ' días');
@@ -61,6 +69,27 @@
       if (es[0].isIntersecting) { $('map').classList.add('draw'); mapObs.disconnect(); }
     }, { threshold: .35 });
     mapObs.observe($('map'));
+  }
+
+  // App instalable y disponible sin señal
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+  }
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  var installEvt = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); installEvt = e;
+    $('install').hidden = false; $('installBtn').hidden = false;
+  });
+  $('installBtn').addEventListener('click', function () {
+    if (!installEvt) return;
+    installEvt.prompt(); installEvt = null; $('install').hidden = true;
+  });
+  window.addEventListener('appinstalled', function () { $('install').hidden = true; });
+  // En iPhone no hay botón de instalar: se hace desde Compartir.
+  if (!standalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) {
+    $('installTxt').textContent = 'Lleva el plan en tu iPhone: toca Compartir y luego "Agregar a pantalla de inicio". Se abre como app y funciona sin señal.';
+    $('install').hidden = false;
   }
 
   // Mar de la portada

@@ -16,6 +16,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="robots" content="noindex">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Mérida 27">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="canonical" href="https://merida2027.vercel.app/">
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#06181D">
@@ -28,6 +34,7 @@
   <div class="wrap">
     <a class="brand" href="#inicio">MID<span class="grad">·27</span></a>
     <nav id="nav" aria-label="Secciones">
+      <a href="#hoy" hidden>Hoy</a>
       <a href="#avisos" class="only-in">Avisos</a>
       <a href="#semana">Semana</a>
       <a href="#boda">Boda</a>
@@ -66,6 +73,10 @@
 </header>
 
 <main class="wrap">
+
+  <section class="sec" id="hoy" hidden>
+    <div class="card hoy" id="hoyBody"></div>
+  </section>
 
   <section class="sec only-in" id="avisos">
     <div class="sec-head">
@@ -107,7 +118,7 @@
           <h3>Llegamos a Yucatán</h3>
           <ul class="ev">
             <li><span class="t">AM</span><div><b>Vuelo MEX → MID</b><p>Liliana y Delibes van en el mismo vuelo. La idea es que todos lleguemos a una hora parecida. <span class="tbd">hora por confirmar</span></p></div></li>
-            <li><span class="t">+50′</span><div><b>Camioneta a la hacienda</b><p>Está en Tecoh, a 50 minutos del centro de Mérida.</p></div></li>
+            <li><span class="t">+50′</span><div><b>Camioneta a la hacienda</b><p>Está en Tecoh, a unos 40 minutos del aeropuerto y 50 del centro de Mérida.</p></div></li>
             <li><time>17:00</time><div><b>Rompehielos</b><p>En el bar con alberca de la hacienda, para brindar y empezar a celebrar. Aquí nos alcanzan Caro y Takeshi, que llegan por su cuenta.</p></div></li>
           </ul>
         </div>
@@ -247,15 +258,17 @@
             <circle cx="446" cy="413" r="14" fill="#FFC845"/><text x="472" y="408">Mérida</text>
           </g>
         </svg>
+        <div id="lmap" hidden></div>
+        <button class="btn map-move" id="mapMove" type="button" aria-pressed="false" hidden>Mover el mapa</button>
       </div>
       <div>
         <ol class="legs">
-          <li class="card rise" style="--c: var(--pink)"><span class="n">1</span><div><b>Aeropuerto → Hacienda</b><span>Jue 25 · recogemos la camioneta al llegar</span></div></li>
-          <li class="card rise" style="--c: var(--aqua)"><span class="n">2</span><div><b>Hacienda → Chuburná</b><span>Sáb 27 · cerca de 1 h 30, cruzando Mérida</span></div></li>
-          <li class="card rise" style="--c: var(--sun)"><span class="n">3</span><div><b>Chuburná → Mérida</b><span>Lun 1 · cerca de 50 min</span></div></li>
-          <li class="card rise" style="--c: var(--fg)"><span class="n">4</span><div><b>Mérida → Aeropuerto</b><span>Mar 2 · cerca de 20 min</span></div></li>
+          <li class="card rise" style="--c: var(--pink)"><span class="n">1</span><div><b>Aeropuerto → Hacienda</b><span>Jue 25 · 33 km, unos 40 min; recogemos la camioneta al llegar</span></div></li>
+          <li class="card rise" style="--c: var(--aqua)"><span class="n">2</span><div><b>Hacienda → Chuburná</b><span>Sáb 27 · 89 km, cerca de 1 h 30</span></div></li>
+          <li class="card rise" style="--c: var(--sun)"><span class="n">3</span><div><b>Chuburná → Mérida</b><span>Lun 1 · 51 km, unos 50 min</span></div></li>
+          <li class="card rise" style="--c: var(--fg)"><span class="n">4</span><div><b>Mérida → Aeropuerto</b><span>Mar 2 · 7 km, de 10 a 20 min según el tráfico</span></div></li>
         </ol>
-        <p class="fine" style="margin-top:14px">Mapa esquemático y tiempos aproximados. La hacienda está a 50 minutos del centro de Mérida.</p>
+        <p class="fine" id="mapNote" style="margin-top:14px">Mapa esquemático. Distancias y tiempos por carretera según OpenStreetMap, sin contar tráfico.</p>
       </div>
     </div>
   </section>
@@ -534,9 +547,13 @@
 
 <input id="docFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic" hidden>
 
+<div class="off-bar" id="offBar" role="status" hidden></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
-<footer><div class="wrap"><span>Mérida, Yucatán · 25 feb – 2 mar 2027</span><span class="mono">20.97° N · 89.62° O</span></div></footer>
+<footer><div class="wrap install" id="install" hidden>
+  <p id="installTxt">Lleva el plan en tu celular: se abre como app y funciona sin señal.</p>
+  <button class="btn hot" id="installBtn" type="button" hidden>Instalar la app</button>
+</div><div class="wrap"><span>Mérida, Yucatán · 25 feb – 2 mar 2027</span><span class="mono">20.97° N · 89.62° O</span></div></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
 <script src="assets/config.js"></script>
@@ -545,5 +562,8 @@
 <script src="assets/avisos.js"></script>
 <script src="assets/docs.js"></script>
 <script src="assets/cuentas.js"></script>
+<script src="assets/hoy.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="assets/mapa.js"></script>
 </body>
 </html>

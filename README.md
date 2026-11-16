@@ -13,6 +13,9 @@ Sitio del grupo para el viaje a la boda de Clau y Diego en Yucatán (25 feb – 
 | `assets/avisos.js` | Muro de avisos |
 | `assets/docs.js` | Documentos del viaje (archivos privados en Supabase Storage) |
 | `assets/cuentas.js` | Dividir una cuenta por consumo |
+| `assets/hoy.js` | Modo "hoy": lo de ese día durante el viaje (se previsualiza con `?hoy=2027-02-26T14:30`) |
+| `assets/mapa.js` | Mapa interactivo de la ruta (Leaflet y OpenStreetMap) |
+| `sw.js`, `manifest.webmanifest`, `icons/` | App instalable y disponible sin señal |
 | `assets/config.js` | URL y clave pública de Supabase |
 | `api/ticket.js` | Función de Vercel que lee la foto de un ticket con la API de Claude |
 | `supabase/schema.sql` | Tablas, permisos, almacenamiento y tiempo real |

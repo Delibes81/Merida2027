@@ -136,16 +136,50 @@
   $('leaveBtn').addEventListener('click', async function () {
     await sb.rpc('leave_trip');
     if (chan) { sb.removeChannel(chan); chan = null; }
+    try { localStorage.removeItem(CACHE); } catch (e) {}
+    offline = false; $('offBar').hidden = true;
     me = null; Object.assign(S, fresh()); resets.forEach(function (f) { f(); });
     close($('dlgMe')); paintAll();
     toast('Saliste del grupo en este dispositivo.');
   });
+
+  // ── Sin señal: copia local de lo último que se vio ──
+  var CACHE = 'merida2027.cache', offline = false;
+  function snapshot() {
+    if (!me || offline) return;
+    try { localStorage.setItem(CACHE, JSON.stringify({ me: me.id, at: Date.now(), S: S })); } catch (e) {}
+  }
+  function goOffline() {
+    var c = null;
+    try { c = JSON.parse(localStorage.getItem(CACHE)); } catch (e) {}
+    if (!c || !byId[c.me]) return false;
+    offline = true; me = byId[c.me]; Object.assign(S, c.S);
+    var when = new Intl.DateTimeFormat('es-MX', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(c.at));
+    $('offBar').textContent = 'Sin señal. Ves lo guardado el ' + when + '; para guardar cambios necesitas conexión.';
+    $('offBar').hidden = false;
+    paintAll();
+    return true;
+  }
+  window.addEventListener('online', function () { if (offline) location.reload(); });
+  window.addEventListener('pagehide', snapshot);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) snapshot(); });
+  setInterval(snapshot, 15000);
+  // Sin la librería de Supabase (primera visita sin señal) las acciones responden "sin conexión" en vez de fallar.
+  function deadClient() {
+    var res = { data: null, error: { message: 'offline' } };
+    var q = function () { var b = { then: function (f, g) { return Promise.resolve(res).then(f, g); } };
+      ['select', 'insert', 'upsert', 'update', 'delete', 'eq', 'order'].forEach(function (k) { b[k] = function () { return b; }; }); return b; };
+    var later = function () { return Promise.resolve(res); };
+    return { from: q, rpc: later, auth: { getSession: function () { return Promise.resolve({ data: { session: null } }); }, signInAnonymously: later },
+      storage: { from: function () { return { upload: later, createSignedUrl: later, remove: later }; } }, removeChannel: function () {} };
+  }
 
   async function enter(id) {
     me = byId[id] || null;
     if (!me) return;
     paintAll();
     await Promise.all(Object.keys(load).map(function (k) { return load[k](); }));
+    snapshot();
     var timers = {};
     chan = sb.channel('trip').on('postgres_changes', { event: '*', schema: 'public' }, function (p) {
       var t = p.table;
@@ -593,7 +627,7 @@
   var T = window.Trip = {
     $: $, all: all, esc: esc, av: av, money: money, fmtDate: fmtDate, toast: toast, open: open, close: close, fail: fail, busy: busy,
     MEMBERS: MEMBERS, byId: byId, HH: HH, S: S, load: load, painters: painters, resets: resets, PENCIL: PENCIL, TRASH: TRASH,
-    openJoin: openJoin, paintStays: paintStays, reloadExpenses: function () { return load.expenses(); }
+    STAYS: STAYS, openJoin: openJoin, paintStays: paintStays, reloadExpenses: function () { return load.expenses(); }
   };
   Object.defineProperty(T, 'me', { get: function () { return me; } });
   Object.defineProperty(T, 'sb', { get: function () { return sb; } });
@@ -601,12 +635,16 @@
   // ── Arranque: cuando ya cargaron todos los módulos ──
   function start() {
     paintAll();
-    if (!ready) return;
+    if (!ready) { sb = deadClient(); goOffline(); return; }
     sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+    if (navigator.onLine === false) { goOffline(); return; }
     sb.auth.getSession().then(function (r) {
       if (!r.data || !r.data.session) return;
-      return sb.rpc('my_member').then(function (m) { if (m.data) return enter(m.data); });
-    }).catch(function () {});
+      return sb.rpc('my_member').then(function (m) {
+        if (m.data) return enter(m.data);
+        if (m.error && !m.error.code) goOffline();  // falló la red, no el permiso
+      });
+    }).catch(function () { goOffline(); });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
