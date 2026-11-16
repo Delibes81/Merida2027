@@ -56,9 +56,9 @@
         '<form class="tk-add" data-tk-add="' + esc(t.id) + '"><input name="name" type="text" maxlength="80" placeholder="Renglón" aria-label="Nombre del renglón" required>' +
         '<input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="$" aria-label="Importe" required><button class="btn" type="submit">Agregar</button></form>' +
         '<details class="tk-paste"><summary>Pegar varios renglones</summary>' +
-        '<p>Un renglón por línea, con el importe al final. Sirve para pegar lo que lea de la foto la app de Claude o cualquier otra: pídele justo esto.</p>' +
+        '<p>Un renglón por línea, con el importe al final. Si quieres, agrega quién lo pidió con @: <b>Nachos 220 @Jorge, Zamy</b> o <b>@todos</b>. Sirve para pegar lo que lea de la foto tu lector de tickets o cualquier asistente.</p>' +
         '<p class="tk-ask" data-ask>' + ASK + '</p><button class="btn" type="button" data-copy-ask>Copiar instrucción</button>' +
-        '<textarea rows="5" placeholder="Cochinita 180&#10;2 Cerveza 100&#10;Propina 40" aria-label="Renglones para pegar"></textarea>' +
+        '<textarea rows="5" placeholder="Cochinita 180 @Jorge&#10;2 Cerveza 100&#10;Nachos 220 @todos&#10;Propina 40" aria-label="Renglones para pegar"></textarea>' +
         '<button class="btn" type="button" data-tk-paste="' + esc(t.id) + '">Agregar renglones</button></details>' +
         '<label class="tk-tip">Propina<input type="number" inputmode="decimal" min="0" step="0.01" value="' + (Number(t.tip) || '') + '" placeholder="0" data-tk-tip="' + esc(t.id) + '"></label>' +
         (totals ? '<ul class="tk-totals">' + totals + '</ul>' : '') +
@@ -69,20 +69,34 @@
   }
 
   // Convierte texto pegado en renglones: "Cochinita 180", "2 Cerveza $100.00", "Propina 40".
-  var ASK = 'Lee este ticket y dame un renglón por línea con el formato: nombre importe. Sin subtotal, IVA ni total. Si hay propina, ponla en una línea que diga Propina.';
+  // Opcional, quién lo pidió: "Nachos 220 @Jorge, Zamy" o "@todos". Formato completo en docs/agente-tickets.md.
+  var ASK = 'Lee este ticket y dame un renglón por línea con el formato: nombre importe. Sin subtotal, IVA ni total. Si hay propina, ponla en una línea que diga Propina. Si te digo quién pidió algo, agrégalo al final con @ y los nombres.';
+  var plain = function (x) { return String(x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); };
   function parseLines(text) {
-    var items = [], tip = null;
+    var items = [], tip = null, unknown = [];
     String(text).split(/\r?\n/).forEach(function (line) {
-      line = line.replace(/^[\s|*\-•·]+|[\s|]+$/g, '');
+      line = line.replace(/^[\s|*\-•·`]+|[\s|`]+$/g, '');
+      if (/^ojo\b/i.test(line)) return;
+      var at = line.indexOf('@'), who = [];
+      if (at > -1) {
+        line.slice(at + 1).split(/,|;|&|\s+y\s+/).forEach(function (n) {
+          n = plain(n.replace('@', ''));
+          if (!n) return;
+          if (n === 'todos' || n === 'todas') return M.forEach(function (m) { if (who.indexOf(m.id) < 0) who.push(m.id); });
+          var m = M.filter(function (x) { return plain(x.name) === n; })[0];
+          if (m) { if (who.indexOf(m.id) < 0) who.push(m.id); } else unknown.push(n);
+        });
+        line = line.slice(0, at).trim();
+      }
       var m = line.match(/^(.*?)[\s:.\-|$]*\$?\s*(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)$/);
       if (!m) return;
       var name = m[1].replace(/[\s:.\-|$]+$/, '').trim(), amount = Number(m[2].replace(/,/g, ''));
       if (!name || !(amount > 0)) return;
       if (/^(sub\s?total|total|i\.?v\.?a\.?|cambio|efectivo|tarjeta|importe|su pago|pago)\b/i.test(name)) return;
       if (/^(propina|servicio)\b/i.test(name)) { tip = amount; return; }
-      items.push({ name: name.slice(0, 80), amount: Math.round(amount * 100) / 100 });
+      items.push({ name: name.slice(0, 80), amount: Math.round(amount * 100) / 100, who: who });
     });
-    return { items: items, tip: tip };
+    return { items: items, tip: tip, unknown: unknown };
   }
 
   var timer;
@@ -160,13 +174,17 @@
       if (!got.items.length && got.tip == null) return T.toast('No encontré renglones: cada línea debe terminar con su importe.');
       var base = T.S.items.filter(function (i) { return i.ticket_id === pid; }).length;
       var newRows = got.items.map(function (i, n) { return { id: uuid(), ticket_id: pid, name: i.name, amount: i.amount, sort: base + n }; });
+      var newClaims = [];
+      got.items.forEach(function (i, n) { i.who.forEach(function (mid) { newClaims.push({ item_id: newRows[n].id, member_id: mid }); }); });
       var tk = T.S.tickets.filter(function (x) { return x.id === pid; })[0];
-      T.S.items = T.S.items.concat(newRows); if (got.tip != null) tk.tip = got.tip;
+      T.S.items = T.S.items.concat(newRows); T.S.claims = T.S.claims.concat(newClaims); if (got.tip != null) tk.tip = got.tip;
       box.value = ''; paint();
       var res = newRows.length ? await T.sb.from('ticket_items').insert(newRows) : { error: null };
+      if (!res.error && newClaims.length) res = await T.sb.from('ticket_claims').insert(newClaims);
       if (!res.error && got.tip != null) res = await T.sb.from('tickets').update({ tip: got.tip }).eq('id', pid);
       if (res.error) return failed();
-      T.toast('Agregué ' + newRows.length + (newRows.length === 1 ? ' renglón' : ' renglones') + (got.tip != null ? ' y la propina.' : '.'));
+      T.toast('Agregué ' + newRows.length + (newRows.length === 1 ? ' renglón' : ' renglones') + (got.tip != null ? ' y la propina.' : '.') +
+        (newClaims.length ? ' Ya vienen marcados los que traían nombre.' : '') + (got.unknown.length ? ' No reconocí a: ' + got.unknown.join(', ') + '.' : ''));
     }
   });
 

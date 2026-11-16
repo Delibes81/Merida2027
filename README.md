@@ -16,6 +16,7 @@ Sitio del grupo para el viaje a la boda de Clau y Diego en Yucatán (25 feb – 
 | `assets/config.js` | URL y clave pública de Supabase |
 | `api/ticket.js` | Función de Vercel que lee la foto de un ticket con la API de Claude |
 | `supabase/schema.sql` | Tablas, permisos, almacenamiento y tiempo real |
+| `docs/agente-tickets.md` | Instrucciones para un asistente que lee la foto de un ticket y devuelve texto listo para pegar |
 
 La página no tiene paso de build. La única dependencia es la de `api/ticket.js`, que Vercel instala solo.
 
