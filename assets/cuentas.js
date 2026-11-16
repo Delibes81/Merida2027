@@ -76,6 +76,18 @@
   function paint() {
     if (!T.me) { $('tickets').innerHTML = ''; return; }
     var open = all('#tickets details[open]').map(function (d) { return d.closest('[data-tk]').getAttribute('data-tk'); });
+    // La cuenta se repinta cada vez que alguien marca algo: se conserva lo que cada quien
+    // tenga a medio escribir (renglón, texto pegado, propina) y dónde tenía el cursor.
+    var FIELDS = ['.tk-add input[name=name]', '.tk-add input[name=amount]', '.tk-paste textarea', '[data-tk-tip]'];
+    var active = document.activeElement, drafts = [];
+    all('#tickets [data-tk]').forEach(function (art) {
+      FIELDS.forEach(function (sel, n) {
+        var el = art.querySelector(sel);
+        if (!el) return;
+        var focus = el === active;
+        if (n === 3 ? focus : (el.value || focus)) drafts.push({ tk: art.getAttribute('data-tk'), sel: sel, value: el.value, focus: focus });
+      });
+    });
     $('tickets').innerHTML = T.S.tickets.length ? T.S.tickets.map(function (t) {
       var c = compute(t), payer = T.byId[t.paid_by], mine = t.created_by === T.me.id;
       var sub = (payer ? 'Pagó ' + esc(payer.name) : 'Cada quien paga lo suyo') + ' · ' + money(c.grand);
@@ -115,6 +127,12 @@
         '</article>';
     }).join('') : '<p class="empty">Todavía no hay cuentas por dividir.</p>';
     open.forEach(function (id) { var d = document.querySelector('[data-tk="' + id + '"] details'); if (d) d.open = true; });
+    drafts.forEach(function (d) {
+      var el = document.querySelector('[data-tk="' + d.tk + '"] ' + d.sel);
+      if (!el) return;
+      el.value = d.value;
+      if (d.focus) { el.focus(); try { el.setSelectionRange(d.value.length, d.value.length); } catch (e) {} }
+    });
     focusLinked();
   }
 
@@ -173,9 +191,6 @@
     ]);
     if (r[0].error || r[1].error || r[2].error) return;
     T.S.tickets = r[0].data; T.S.items = r[1].data; T.S.claims = r[2].data; T.S.payments = r[3].error ? [] : r[3].data;
-    // No repintar mientras alguien escribe un renglón o la propina: perdería lo tecleado.
-    var a = document.activeElement;
-    if (a && a.closest && a.closest('#tickets') && /INPUT|TEXTAREA/.test(a.tagName) && a.value) return;
     paint();
   }
   var soon = function () { clearTimeout(timer); timer = setTimeout(reload, 120); };
@@ -296,6 +311,7 @@
     var tid = f.getAttribute('data-tk-add'), amount = Math.round(Number(f.amount.value) * 100) / 100, name = f.name.value.trim();
     if (!name || !(amount > 0)) return;
     var row = { id: uuid(), ticket_id: tid, name: name, amount: amount, sort: T.S.items.filter(function (i) { return i.ticket_id === tid; }).length };
+    f.reset();
     T.S.items = T.S.items.concat([row]); paint();
     var again = document.querySelector('[data-tk-add="' + tid + '"] input[name=name]');
     if (again) again.focus();
