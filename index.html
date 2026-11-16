@@ -15,263 +15,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#06181D">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Unbounded:wght@500;700;800&display=swap">
-<style>
-/* Concepto: atardecer en el Golfo. Un solo mundo visual, de noche: el sol se mete al mar
-   en la portada y sus tres colores marcan los tres hospedajes en toda la página
-   (rosa = hacienda, aguamarina = Chuburná, ámbar = Mérida). */
-:root {
-  color-scheme: dark;
-  --bg: #06181D;
-  --bg-2: #0A242B;
-  --card: #0D2B33;
-  --card-2: #113640;
-  --line: #1F4650;
-  --fg: #F3F8F5;
-  --muted: #9AB6B6;
-  --pink: #FF5C93;
-  --coral: #FF8552;
-  --sun: #FFC845;
-  --aqua: #3FE0CF;
-  --ink: #06181D;
-  --sunset: linear-gradient(100deg, var(--sun), var(--coral) 45%, var(--pink));
-  --display: "Unbounded", "Arial Black", "Segoe UI", sans-serif;
-  --body: "Manrope", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-  --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --r: 20px;
-}
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; scroll-padding-top: 76px; }
-body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--body); -webkit-font-smoothing: antialiased; }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
-.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
-ul, ol { padding: 0; list-style: none; }
-h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.05; }
-a { color: inherit; }
-:focus-visible { outline: 2px solid var(--sun); outline-offset: 3px; border-radius: 6px; }
-.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-.eyebrow { font: 500 12px/1.4 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-.grad { background: var(--sunset); -webkit-background-clip: text; background-clip: text; color: transparent; }
-
-/* Barra superior */
-.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: rgba(6, 24, 29, .78); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
-.top .wrap { display: flex; align-items: center; gap: 16px; height: 56px; }
-.brand { font: 800 15px var(--display); text-decoration: none; white-space: nowrap; }
-.top nav { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin-left: auto; min-width: 0; }
-.top nav::-webkit-scrollbar { display: none; }
-.top nav a { padding: 7px 12px; border-radius: 99px; font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none; white-space: nowrap; transition: color .2s, background .2s; }
-.top nav a:hover { color: var(--fg); }
-.top nav a.on { background: var(--card-2); color: var(--fg); }
-
-/* Portada */
-.hero { position: relative; overflow: hidden; --S: clamp(190px, 40vw, 460px); background: radial-gradient(120% 90% at 85% 100%, #2A1E3C 0%, #0E2A36 45%, var(--bg) 75%); }
-.hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
-.sun { position: absolute; z-index: 0; width: var(--S); height: var(--S); right: max(4%, calc(50% - 520px)); bottom: 26px; border-radius: 50%; background: linear-gradient(180deg, var(--sun) 0%, var(--coral) 42%, var(--pink) 78%, #B8317F 100%); box-shadow: 0 0 90px 10px rgba(255, 133, 82, .35), 0 0 220px 60px rgba(255, 92, 147, .18); animation: sunset 2.4s cubic-bezier(.2, .7, .2, 1) both; }
-@keyframes sunset { from { transform: translateY(-14%); filter: brightness(1.15); } to { transform: none; filter: none; } }
-.hero .wrap { position: relative; z-index: 2; padding-block: 44px calc(var(--S) + 56px); display: flex; flex-direction: column; gap: 22px; }
-.hero h1 { font-weight: 800; font-size: clamp(54px, 16.5vw, 168px); letter-spacing: -.045em; line-height: .88; }
-.hero h1 em { font-style: normal; display: block; }
-.hero-sub { font-size: clamp(17px, 2.2vw, 21px); color: var(--muted); max-width: 34ch; }
-.hero-sub b { color: var(--fg); font-weight: 600; }
-.facts { display: flex; flex-wrap: wrap; gap: 8px; }
-.facts li { font: 500 13px var(--mono); letter-spacing: .04em; padding: 7px 12px; border: 1px solid var(--line); border-radius: 99px; background: rgba(13, 43, 51, .6); }
-.count { display: flex; gap: 8px; }
-.count div { min-width: 68px; padding: 12px 10px 10px; border-radius: 16px; background: rgba(13, 43, 51, .72); border: 1px solid var(--line); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.count b { font: 800 clamp(24px, 6vw, 34px)/1 var(--display); font-variant-numeric: tabular-nums; }
-.count small { font: 500 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-.count-to { font-size: 14px; color: var(--muted); }
-@media (min-width: 860px) {
-  .hero .wrap { padding-block: 72px 210px; }
-  .hero .wrap > * { max-width: 62%; }
-}
-
-/* Secciones */
-main { display: flex; flex-direction: column; gap: clamp(64px, 9vw, 112px); padding-block: clamp(48px, 7vw, 88px) 80px; }
-.sec { display: flex; flex-direction: column; gap: 24px; }
-.sec-head { display: flex; flex-direction: column; gap: 10px; }
-.sec-head h2 { font-size: clamp(28px, 5.4vw, 48px); font-weight: 700; letter-spacing: -.03em; }
-.sec-head p:not(.eyebrow) { color: var(--muted); max-width: 60ch; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); }
-.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 99px; font-weight: 700; font-size: 14px; text-decoration: none; border: 1px solid var(--line); background: var(--card-2); color: var(--fg); transition: transform .15s, border-color .15s; }
-.btn:hover { transform: translateY(-1px); border-color: var(--muted); }
-.btn.hot { background: var(--sunset); color: var(--ink); border-color: transparent; }
-.tbd { display: inline-block; font: 500 12px var(--mono); padding: 2px 9px; border-radius: 99px; border: 1px dashed var(--muted); color: var(--muted); white-space: nowrap; }
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    .rise { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 35%; }
-    @keyframes rise { from { opacity: .55; transform: translateY(22px); } to { opacity: 1; transform: none; } }
-  }
-}
-
-/* La semana */
-.week-scroll { overflow-x: auto; scrollbar-width: thin; margin-inline: -4px; padding: 4px; }
-.week { min-width: 680px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px 8px; }
-.day { grid-column: span 2; padding: 14px 14px 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; min-width: 0; text-decoration: none; transition: transform .15s, border-color .15s; }
-.day:hover { transform: translateY(-3px); border-color: var(--muted); }
-.day .dow { font: 500 12px var(--mono); letter-spacing: .14em; color: var(--muted); }
-.day .num { font: 800 38px/1.05 var(--display); letter-spacing: -.04em; }
-.day .what { font-weight: 700; font-size: 15px; margin-top: 6px; }
-.day .when { font-size: 13px; color: var(--muted); }
-.day.boda { background: linear-gradient(160deg, #3A1730, var(--card) 70%); border-color: #6B2A52; }
-.day.boda .num { background: var(--sunset); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.day.today { border-color: var(--sun); box-shadow: 0 0 0 1px var(--sun); }
-.stay { padding: 11px 14px; border-radius: 12px; font-weight: 700; font-size: 14px; color: var(--ink); display: flex; flex-direction: column; min-width: 0; }
-.stay span { font: 500 12px var(--mono); opacity: .8; }
-.stay.h { grid-column: 1 / 6; background: var(--pink); }
-.stay.c { grid-column: 6 / 10; background: var(--aqua); }
-.stay.m { grid-column: 10 / 13; background: var(--sun); }
-
-/* Día por día */
-.tl { display: flex; flex-direction: column; }
-.tl-day { display: grid; grid-template-columns: 96px 1fr; gap: 0 20px; --c: var(--muted); }
-.tl-date { padding-top: 2px; text-align: right; }
-.tl-date b { display: block; font: 800 30px/1 var(--display); letter-spacing: -.04em; }
-.tl-date span { font: 500 12px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-.tl-body { position: relative; padding: 0 0 36px 28px; border-left: 2px solid var(--line); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.tl-day:last-child .tl-body { padding-bottom: 0; border-left-color: transparent; }
-.tl-body::before { content: ""; position: absolute; left: -8px; top: 8px; width: 14px; height: 14px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 5px var(--bg), 0 0 18px var(--c); }
-.tl-body h3 { font-size: 20px; font-weight: 700; letter-spacing: -.02em; line-height: 1.25; }
-.tl-where { font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--c); }
-.ev { display: flex; flex-direction: column; gap: 8px; }
-.ev li { display: grid; grid-template-columns: 58px 1fr; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
-.ev time, .ev .t { font: 500 14px/1.7 var(--mono); color: var(--c); }
-.ev b { font-weight: 700; }
-.ev p { color: var(--muted); font-size: 15px; }
-@media (max-width: 560px) {
-  .tl-day { grid-template-columns: 1fr; }
-  .tl-date { text-align: left; display: flex; align-items: baseline; gap: 10px; padding: 0 0 10px 30px; border-left: 2px solid var(--line); }
-  .tl-day:first-child .tl-date { border-left-color: transparent; }
-  .tl-date b { font-size: 24px; }
-  .tl-body::before { top: -30px; }
-  .tl-body { padding-bottom: 30px; }
-}
-
-/* La boda */
-.boda-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; }
-.boda-main { padding: clamp(20px, 3.5vw, 36px); background: linear-gradient(150deg, #43183A 0%, #1B2238 55%, var(--card) 100%); border-color: #5B2A55; display: flex; flex-direction: column; gap: 22px; min-width: 0; }
-.boda-main h3 { font-size: clamp(22px, 3.4vw, 32px); font-weight: 700; letter-spacing: -.03em; }
-.moments li { display: grid; grid-template-columns: auto 1fr; gap: 4px 18px; padding: 14px 0; border-top: 1px solid rgba(255, 255, 255, .14); align-items: baseline; }
-.moments time { font: 800 clamp(24px, 4.6vw, 34px)/1 var(--display); letter-spacing: -.04em; grid-row: span 2; }
-.moments b { font-weight: 700; font-size: 17px; }
-.moments span { color: var(--muted); font-size: 15px; }
-.btns { display: flex; flex-wrap: wrap; gap: 8px; }
-.boda-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.mini { padding: 20px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.mini h3 { font-size: 17px; font-weight: 700; }
-.mini p { color: var(--muted); font-size: 15px; }
-.mini p b { color: var(--fg); font-weight: 600; }
-.no { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
-.no li { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: rgba(255, 92, 147, .14); color: var(--pink); text-decoration: line-through; text-decoration-thickness: 1px; }
-@media (max-width: 820px) { .boda-grid { grid-template-columns: 1fr; } }
-
-/* La ruta */
-.ruta { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; align-items: start; }
-.map { padding: 10px; overflow: hidden; background: #082028; min-width: 0; }
-.map svg { display: block; width: 100%; height: auto; }
-.map text { font-family: var(--body); fill: var(--fg); }
-.map .sea-lbl { font: 500 20px var(--mono); letter-spacing: .3em; fill: #3C7480; }
-.map .sec-pt text { fill: var(--muted); font-size: 21px; font-weight: 500; }
-.map .stop text { font-size: 25px; font-weight: 700; paint-order: stroke; stroke: #082028; stroke-width: 6px; stroke-linejoin: round; }
-.map .leg { fill: none; stroke-width: 5; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 0; }
-@media (prefers-reduced-motion: no-preference) {
-  .map.draw .leg { animation: draw 1.1s ease-out both; }
-  .map.draw .leg.l2 { animation-delay: .9s; } .map.draw .leg.l3 { animation-delay: 1.9s; } .map.draw .leg.l4 { animation-delay: 2.8s; }
-  @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
-}
-.legs { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.legs li { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding: 14px 16px; align-items: center; }
-.legs .n { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 500 14px var(--mono); color: var(--ink); background: var(--c); }
-.legs b { display: block; font-weight: 700; line-height: 1.35; }
-.legs span { font-size: 14px; color: var(--muted); }
-.fine { font-size: 13px; color: var(--muted); }
-@media (max-width: 820px) { .ruta { grid-template-columns: 1fr; } }
-.map .stop text.sub { font-size: 19px; font-weight: 500; }
-@media (max-width: 560px) {
-  .map .stop text { font-size: 34px; }
-  .map .stop text.sub { font-size: 25px; }
-  .map .sec-pt text { font-size: 27px; }
-  .map .sea-lbl { font-size: 22px; }
-}
-
-/* A dónde ir */
-.places { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px; }
-.place { padding: 22px; display: flex; flex-direction: column; gap: 10px; min-width: 0; position: relative; overflow: hidden; transition: transform .2s, border-color .2s; --c: var(--aqua); }
-.place:hover { transform: translateY(-4px); border-color: var(--c); }
-.place::after { content: ""; position: absolute; width: 180px; height: 180px; right: -70px; top: -70px; border-radius: 50%; background: var(--c); opacity: .13; filter: blur(8px); }
-.ico { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); }
-.ico svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.place h3 { font-size: 18px; font-weight: 700; line-height: 1.25; }
-.place p, .place ul { font-size: 15px; color: var(--muted); }
-.place ul { display: flex; flex-direction: column; gap: 4px; }
-.place ul li::before { content: "→ "; color: var(--c); }
-.place .go { margin-top: auto; padding-top: 6px; font-weight: 700; font-size: 14px; color: var(--c); text-decoration: none; }
-.place .go:hover { text-decoration: underline; text-underline-offset: 4px; }
-
-/* Pendientes */
-.prog { display: flex; align-items: center; gap: 14px; }
-.prog-bar { flex: 1; height: 8px; border-radius: 99px; background: var(--card-2); overflow: hidden; }
-.prog-bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--sunset); transition: width .4s cubic-bezier(.2, .7, .2, 1); }
-.prog span { font: 500 13px var(--mono); color: var(--muted); white-space: nowrap; }
-.todo { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 10px; }
-.todo label { display: grid; grid-template-columns: 26px 1fr auto; gap: 14px; align-items: center; padding: 15px 18px; cursor: pointer; height: 100%; transition: border-color .15s, background .15s; }
-.todo label:hover { border-color: var(--muted); }
-.todo input { appearance: none; -webkit-appearance: none; margin: 0; width: 26px; height: 26px; border-radius: 9px; border: 2px solid var(--muted); display: grid; place-items: center; cursor: pointer; transition: background .15s, border-color .15s; }
-.todo input::after { content: ""; width: 11px; height: 6px; border: solid var(--ink); border-width: 0 0 2.5px 2.5px; transform: rotate(-45deg) translate(1px, -1px) scale(0); transition: transform .15s; }
-.todo input:checked { background: var(--aqua); border-color: var(--aqua); }
-.todo input:checked::after { transform: rotate(-45deg) translate(1px, -1px) scale(1); }
-.todo .t { min-width: 0; font-weight: 700; line-height: 1.35; }
-.todo .t small { display: block; font-weight: 400; font-size: 14px; color: var(--muted); }
-.todo label:has(input:checked) { background: transparent; }
-.todo input:checked ~ .t { text-decoration: line-through; color: var(--muted); }
-.due { font: 500 12px var(--mono); padding: 4px 10px; border-radius: 99px; background: var(--sun); color: var(--ink); white-space: nowrap; }
-.due.late { background: var(--pink); }
-.todo input:checked ~ .due { display: none; }
-@media (max-width: 520px) { .todo label { grid-template-columns: 26px 1fr; } .todo .due { grid-column: 2; justify-self: start; } }
-
-/* Dinero: camioneta y vuelo */
-.money { display: grid; grid-template-columns: 1fr 1.15fr; gap: 14px; }
-.calc { padding: clamp(20px, 3vw, 30px); display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-.calc h3, .pass h3 { font-size: 17px; font-weight: 700; }
-.result b { display: block; font: 800 clamp(44px, 9vw, 68px)/1 var(--display); letter-spacing: -.05em; }
-.result span { font-size: 14px; color: var(--muted); }
-.fields { display: flex; gap: 10px; }
-.fields label { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.fields input { width: 100%; min-width: 0; padding: 10px 12px; font: 700 17px var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; font-variant-numeric: tabular-nums; }
-.fields label:first-child { flex-grow: 1.5; }
-.pass { display: grid; grid-template-columns: 1fr auto; min-width: 0; overflow: hidden; }
-.pass-main { padding: clamp(20px, 3vw, 30px); display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-.iata { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; }
-.iata b { display: block; font: 800 clamp(34px, 7vw, 52px)/1 var(--display); letter-spacing: -.04em; }
-.iata span { font-size: 13px; color: var(--muted); }
-.iata > div:last-child { text-align: right; }
-.fly { position: relative; height: 2px; background: repeating-linear-gradient(90deg, var(--muted) 0 6px, transparent 6px 12px); }
-.fly svg { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; transform: translate(-50%, -50%); fill: var(--sun); background: var(--card); padding: 3px; box-sizing: content-box; }
-.pass dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 14px; }
-.pass dt { font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-.pass dd { font-weight: 700; }
-.pass-stub { position: relative; width: 176px; padding: 24px 18px; border-left: 2px dashed var(--line); background: var(--card-2); display: flex; flex-direction: column; justify-content: center; gap: 4px; }
-.pass-stub::before, .pass-stub::after { content: ""; position: absolute; left: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); }
-.pass-stub::before { top: -12px; } .pass-stub::after { bottom: -12px; }
-.pass-stub b { font: 800 22px/1.1 var(--display); white-space: nowrap; letter-spacing: -.04em; }
-.pass-stub span { font-size: 13px; color: var(--muted); }
-@media (max-width: 900px) { .money { grid-template-columns: 1fr; } }
-@media (max-width: 480px) {
-  .pass { grid-template-columns: 1fr; }
-  .pass-stub { width: auto; border-left: 0; border-top: 2px dashed var(--line); flex-direction: row; align-items: baseline; justify-content: flex-start; flex-wrap: wrap; gap: 4px 10px; padding: 18px 20px; }
-  .pass-stub::before { top: -12px; left: -12px; } .pass-stub::after { top: -12px; bottom: auto; left: auto; right: -12px; }
-}
-
-/* El grupo */
-.crew { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 12px; }
-.fam { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
-.fam ul { display: flex; flex-wrap: wrap; gap: 12px 16px; }
-.fam li { display: flex; align-items: center; gap: 10px; font-weight: 700; }
-.av { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font: 800 15px var(--display); color: var(--ink); background: linear-gradient(140deg, hsl(var(--h) 95% 68%), hsl(calc(var(--h) + 40) 90% 58%)); }
-
-footer { border-top: 1px solid var(--line); }
-footer .wrap { padding-block: 26px 34px; display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: space-between; font-size: 13px; color: var(--muted); }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
-</style>
+<link rel="stylesheet" href="assets/styles.css">
 </head>
 <body>
 
@@ -287,6 +31,7 @@ footer .wrap { padding-block: 26px 34px; display: flex; flex-wrap: wrap; gap: 6p
       <a href="#costos">Costos</a>
       <a href="#grupo">Grupo</a>
     </nav>
+    <button class="me-btn" id="meBtn" type="button">Entrar</button>
   </div>
 </div>
 
@@ -497,7 +242,7 @@ footer .wrap { padding-block: 26px 34px; display: flex; flex-wrap: wrap; gap: 6p
     <div class="sec-head">
       <p class="eyebrow">Sábado a lunes, por nuestra cuenta</p>
       <h2>A dónde ir</h2>
-      <p>Lo que anotamos en la hoja. Los cenotes y destinos son ideas para empezar a investigar, todavía no un plan cerrado.</p>
+      <p>Lo que anotamos en la hoja. Los cenotes y destinos son ideas para empezar a investigar. Marca a cuáles te apuntas y vemos qué gana.</p>
     </div>
     <div class="places">
       <article class="card place rise" style="--c: var(--aqua)">
@@ -505,6 +250,7 @@ footer .wrap { padding-block: 26px 34px; display: flex; flex-wrap: wrap; gap: 6p
         <p class="eyebrow">Playa</p>
         <h3>Playa de los Columpios</h3>
         <p>Columpios dentro del mar, en la zona de Chuburná Puerto, cerca del Airbnb.</p>
+        <div class="act" data-act="columpios"></div>
         <a class="go" href="https://www.google.com/maps/search/?api=1&query=Playa+de+los+Columpios+Chuburn%C3%A1+Puerto+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa →</a>
       </article>
       <article class="card place rise" style="--c: var(--pink)">
@@ -512,6 +258,7 @@ footer .wrap { padding-block: 26px 34px; display: flex; flex-wrap: wrap; gap: 6p
         <p class="eyebrow">Playa</p>
         <h3>Playa de los Cerditos</h3>
         <p>Pig Beach, en Progreso: una playa con cerditos rescatados. Hay que revisar horarios antes de ir.</p>
+        <div class="act" data-act="cerditos"></div>
         <a class="go" href="https://www.google.com/maps/search/?api=1&query=Pig+Beach+Progreso+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa →</a>
       </article>
       <article class="card place rise" style="--c: var(--sun)">
@@ -519,9 +266,9 @@ footer .wrap { padding-block: 26px 34px; display: flex; flex-wrap: wrap; gap: 6p
         <p class="eyebrow">Cenotes · Jorge investiga</p>
         <h3>Cenotes cerca</h3>
         <ul>
-          <li>Xlacah, en Dzibilchaltún</li>
-          <li>Ruta de Cuzamá y Homún</li>
-          <li>San Antonio Mulix</li>
+          <li><span class="what">Xlacah, en Dzibilchaltún</span><span class="act" data-act="xlacah"></span></li>
+          <li><span class="what">Ruta de Cuzamá y Homún</span><span class="act" data-act="cuzama"></span></li>
+          <li><span class="what">San Antonio Mulix</span><span class="act" data-act="mulix"></span></li>
         </ul>
         <a class="go" href="https://www.google.com/maps/search/?api=1&query=cenotes+cerca+de+M%C3%A9rida+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa →</a>
       </article>
@@ -530,10 +277,10 @@ footer .wrap { padding-block: 26px 34px; display: flex; flex-wrap: wrap; gap: 6p
         <p class="eyebrow">Paseos de un día</p>
         <h3>Destinos cercanos</h3>
         <ul>
-          <li>Progreso y su malecón</li>
-          <li>Sisal</li>
-          <li>Izamal, la ciudad amarilla</li>
-          <li>Uxmal</li>
+          <li><span class="what">Progreso y su malecón</span><span class="act" data-act="progreso"></span></li>
+          <li><span class="what">Sisal</span><span class="act" data-act="sisal"></span></li>
+          <li><span class="what">Izamal, la ciudad amarilla</span><span class="act" data-act="izamal"></span></li>
+          <li><span class="what">Uxmal</span><span class="act" data-act="uxmal"></span></li>
         </ul>
         <a class="go" href="https://www.google.com/maps/search/?api=1&query=M%C3%A9rida+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa →</a>
       </article>
@@ -558,7 +305,8 @@ footer .wrap { padding-block: 26px 34px; display: flex; flex-wrap: wrap; gap: 6p
       <li><label class="card"><input type="checkbox" id="t-rutas"><span class="t">Rutas<small>Hacienda → Chuburná → Mérida → aeropuerto</small></span></label></li>
       <li><label class="card"><input type="checkbox" id="t-recos"><span class="t">Recomendaciones<small>Dónde comer y qué no perderse</small></span></label></li>
     </ul>
-    <p class="fine">Por ahora las palomitas se guardan solo en tu dispositivo.</p>
+    <p class="fine" id="todoNote">Las palomitas se guardan solo en este dispositivo. <button class="link" type="button" data-join>Entra con el código del grupo</button> para compartirlas con todos.</p>
+    <p class="fine" id="todoSync" hidden>Sincronizado con el grupo: lo que marques lo ven todos al momento.</p>
   </section>
 
   <section class="sec" id="costos">
@@ -599,172 +347,93 @@ footer .wrap { padding-block: 26px 34px; display: flex; flex-wrap: wrap; gap: 6p
         </div>
       </div>
     </div>
+    <div class="card ledger rise" id="ledger">
+      <div class="ledger-head">
+        <div><p class="eyebrow">Gastos del grupo</p><b class="ledger-total" id="exTotal">$0</b></div>
+        <button class="btn hot" id="exAdd" type="button">Agregar gasto</button>
+      </div>
+      <div class="locked">Entra con el código del grupo para registrar gastos y ver quién le debe a quién. <button class="btn" type="button" data-join>Entrar</button></div>
+      <div id="exBody" hidden>
+        <ul class="ex-list" id="exList"></ul>
+        <div class="ledger-cols">
+          <div><h3>Saldos</h3><ul class="bal" id="exBal"></ul></div>
+          <div><h3>Para quedar a mano</h3><ul class="pay" id="exPay"></ul></div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <section class="sec" id="grupo">
     <div class="sec-head">
       <p class="eyebrow">9 adultos y Alex</p>
       <h2>El grupo</h2>
+      <p id="crewSum">Cada quien captura su vuelo para saber a qué hora llegamos todos. <button class="link" type="button" data-join>Entra con el código del grupo</button> para verlos.</p>
     </div>
-    <div class="crew">
-      <div class="card fam rise"><ul>
-        <li><span class="av" style="--h: 335">L</span>Liliana</li>
-        <li><span class="av" style="--h: 20">D</span>Delibes</li>
-        <li><span class="av" style="--h: 45">A</span>Alex</li>
-      </ul></div>
-      <div class="card fam rise"><ul>
-        <li><span class="av" style="--h: 170">J</span>Jorge</li>
-        <li><span class="av" style="--h: 150">Z</span>Zamy</li>
-      </ul></div>
-      <div class="card fam rise"><ul>
-        <li><span class="av" style="--h: 200">C</span>Chang</li>
-        <li><span class="av" style="--h: 250">S</span>Sonia</li>
-      </ul></div>
-      <div class="card fam rise"><ul>
-        <li><span class="av" style="--h: 280">T</span>Takeshi</li>
-        <li><span class="av" style="--h: 310">C</span>Caro</li>
-        <li><span class="av" style="--h: 80">L</span>Lore</li>
-      </ul></div>
-    </div>
+    <ul class="crew" id="crew"></ul>
   </section>
 
 </main>
 
+
+<dialog class="dlg" id="dlgJoin" aria-labelledby="joinT">
+  <form id="joinForm">
+    <h3 id="joinT">Entrar al grupo</h3>
+    <p>Con el código del grupo ves los vuelos, los gastos y los pendientes de todos. Pídeselo a Delibes o a Jorge.</p>
+    <label class="fld" for="joinCode">Código del grupo<input id="joinCode" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" required></label>
+    <fieldset><legend>¿Quién eres?</legend><div class="who" id="joinWho"></div></fieldset>
+    <p class="err" id="joinErr" hidden></p>
+    <div class="dlg-actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit" id="joinGo">Entrar</button></div>
+  </form>
+</dialog>
+
+<dialog class="dlg" id="dlgMe" aria-labelledby="meT">
+  <form id="meForm">
+    <h3 id="meT">Hola</h3>
+    <p>En este dispositivo entraste al grupo. Si eres otra persona, sal y vuelve a entrar con tu nombre.</p>
+    <div class="dlg-actions"><button class="btn" type="button" id="leaveBtn">Salir en este dispositivo</button><button class="btn hot" type="button" data-close>Listo</button></div>
+  </form>
+</dialog>
+
+<dialog class="dlg" id="dlgFlight" aria-labelledby="flT">
+  <form id="flForm">
+    <h3 id="flT">Vuelo</h3>
+    <label class="fld" for="flWho">Persona<select id="flWho"></select></label>
+    <fieldset><legend>Llegada a Mérida</legend><div class="row">
+      <label class="fld" for="flArrDate">Fecha<input id="flArrDate" type="date"></label>
+      <label class="fld" for="flArrTime">Hora<input id="flArrTime" type="time"></label>
+      <label class="fld" for="flArrNo">Vuelo<input id="flArrNo" type="text" maxlength="20" placeholder="AM 825" autocomplete="off"></label>
+    </div></fieldset>
+    <fieldset><legend>Salida de Mérida</legend><div class="row">
+      <label class="fld" for="flDepDate">Fecha<input id="flDepDate" type="date"></label>
+      <label class="fld" for="flDepTime">Hora<input id="flDepTime" type="time"></label>
+      <label class="fld" for="flDepNo">Vuelo<input id="flDepNo" type="text" maxlength="20" placeholder="AM 826" autocomplete="off"></label>
+    </div></fieldset>
+    <p class="err" id="flErr" hidden></p>
+    <div class="dlg-actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit">Guardar vuelo</button></div>
+  </form>
+</dialog>
+
+<dialog class="dlg" id="dlgEx" aria-labelledby="exT">
+  <form id="exForm">
+    <h3 id="exT">Agregar gasto</h3>
+    <label class="fld" for="exConcept">Concepto<input id="exConcept" type="text" maxlength="80" placeholder="Gasolina, súper, entradas…" autocomplete="off" required></label>
+    <div class="row">
+      <label class="fld" for="exAmount">Monto (MXN)<input id="exAmount" type="number" inputmode="decimal" min="1" step="0.01" required></label>
+      <label class="fld" for="exPaid">Pagó<select id="exPaid"></select></label>
+    </div>
+    <fieldset><legend>Se divide entre</legend><div class="who" id="exSplit"></div></fieldset>
+    <p class="err" id="exErr" hidden></p>
+    <div class="dlg-actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit">Guardar gasto</button></div>
+  </form>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
 <footer><div class="wrap"><span>Mérida, Yucatán · 25 feb – 2 mar 2027</span><span class="mono">20.97° N · 89.62° O</span></div></footer>
 
-<script>
-(function () {
-  var $ = function (id) { return document.getElementById(id); };
-  var DAY = 864e5;
-  var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var pad = function (n) { return n < 10 ? '0' + n : '' + n; };
-
-  // Cuenta regresiva al rompehielos (hora de Mérida, UTC-6)
-  var target = new Date('2027-02-25T17:00:00-06:00').getTime();
-  function tick() {
-    var ms = target - Date.now();
-    if (ms <= 0) {
-      $('count').hidden = true;
-      $('countTo').textContent = ms > -6 * DAY ? '¡Ya estamos en Mérida!' : 'Qué viaje. Hasta la próxima.';
-      return;
-    }
-    $('cd').textContent = Math.floor(ms / DAY);
-    $('ch').textContent = pad(Math.floor(ms % DAY / 36e5));
-    $('cm').textContent = pad(Math.floor(ms % 36e5 / 6e4));
-    $('cs').textContent = pad(Math.floor(ms % 6e4 / 1e3));
-  }
-  tick(); setInterval(tick, 1000);
-
-  // Día de hoy en la tira de la semana (fecha en Mérida)
-  var hoy = new Date(Date.now() - 6 * 36e5).toISOString().slice(0, 10);
-  [].forEach.call(document.querySelectorAll('#week .day'), function (d) {
-    if (d.getAttribute('data-d') === hoy) d.classList.add('today');
-  });
-
-  // Fechas límite
-  [].forEach.call(document.querySelectorAll('.due[data-due]'), function (el) {
-    var left = Math.ceil((new Date(el.getAttribute('data-due') + 'T23:59:59-06:00').getTime() - Date.now()) / DAY);
-    var lbl = el.getAttribute('data-label');
-    if (left < 1) { el.textContent = 'venció el ' + lbl; el.classList.add('late'); }
-    else el.textContent = 'antes del ' + lbl + ' · ' + (left === 1 ? 'último día' : left + ' días');
-  });
-
-  // Pendientes (se guardan en este dispositivo)
-  var KEY = 'merida2027.todo', saved = {};
-  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
-  var boxes = [].slice.call(document.querySelectorAll('#todo input'));
-  function progress() {
-    var done = boxes.filter(function (b) { return b.checked; }).length;
-    $('progBar').style.width = (100 * done / boxes.length) + '%';
-    $('progTxt').textContent = done + ' de ' + boxes.length + ' listos';
-  }
-  boxes.forEach(function (cb) {
-    cb.checked = !!saved[cb.id];
-    cb.addEventListener('change', function () {
-      saved[cb.id] = cb.checked;
-      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
-      progress();
-    });
-  });
-  progress();
-
-  // Camioneta
-  var mxn = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
-  function calc() {
-    var total = +$('c-total').value || 0;
-    var pers = Math.max(1, +$('c-pers').value || 1);
-    var dias = Math.max(1, +$('c-dias').value || 1);
-    $('c-pp').textContent = mxn.format(total / pers);
-    $('c-det').textContent = mxn.format(total / pers / dias) + ' por persona al día';
-  }
-  ['c-total', 'c-pers', 'c-dias'].forEach(function (id) { $(id).addEventListener('input', calc); });
-  calc();
-
-  // Sección activa en la barra y trazo del mapa al entrar en pantalla
-  if ('IntersectionObserver' in window) {
-    var links = {};
-    [].forEach.call(document.querySelectorAll('#nav a'), function (a) { links[a.getAttribute('href').slice(1)] = a; });
-    var spy = new IntersectionObserver(function (es) {
-      es.forEach(function (e) {
-        if (!e.isIntersecting) return;
-        for (var k in links) links[k].classList.toggle('on', k === e.target.id);
-      });
-    }, { rootMargin: '-45% 0px -50% 0px' });
-    for (var k in links) spy.observe($(k));
-    var mapObs = new IntersectionObserver(function (es) {
-      if (es[0].isIntersecting) { $('map').classList.add('draw'); mapObs.disconnect(); }
-    }, { threshold: .35 });
-    mapObs.observe($('map'));
-  }
-
-  // Mar de la portada
-  var cv = $('sea'), cx = cv.getContext('2d'), sun = $('sun'), W, H, sx, sr, top, dpr;
-  function size() {
-    var r = cv.getBoundingClientRect(), s = sun.getBoundingClientRect();
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = r.width; H = r.height;
-    cv.width = W * dpr; cv.height = H * dpr;
-    sr = sun.offsetWidth / 2;
-    sx = sun.offsetLeft + sr;
-    top = sun.offsetTop + sr * 1.24;
-  }
-  var layers = [
-    { c: 'rgba(22, 86, 102, .78)', a: 7, l: 340, v: .55, y: 0 },
-    { c: 'rgba(14, 62, 76, .9)', a: 9, l: 250, v: -.8, y: .26 },
-    { c: 'rgba(9, 42, 52, .95)', a: 8, l: 190, v: 1.1, y: .55 },
-    { c: '#06181D', a: 6, l: 150, v: -1.4, y: .84 }
-  ];
-  function draw(ms) {
-    var t = ms / 1000, depth = H - top;
-    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cx.clearRect(0, 0, W, H);
-    layers.forEach(function (L, i) {
-      var y0 = top + depth * L.y;
-      cx.beginPath(); cx.moveTo(0, H);
-      for (var x = 0; x <= W + 8; x += 8) {
-        cx.lineTo(x, y0 + Math.sin(x / L.l + t * L.v) * L.a + Math.sin(x / (L.l * .37) - t * L.v * 1.6) * L.a * .35);
-      }
-      cx.lineTo(W, H); cx.closePath(); cx.fillStyle = L.c; cx.fill();
-      if (i === 0) {
-        // reflejo del sol
-        for (var k = 0; k < 9; k++) {
-          var w = sr * 1.5 * (1 - k / 11) * (.62 + .38 * Math.sin(t * 1.3 + k * 1.9));
-          var yy = y0 + 14 + k * (depth * .8 / 9);
-          cx.fillStyle = 'rgba(255, ' + (150 - k * 7) + ', ' + (95 + k * 6) + ', ' + (.55 - k * .05) + ')';
-          cx.fillRect(sx - w / 2 + Math.sin(t + k) * 6, yy, w, 3);
-        }
-      }
-    });
-  }
-  size(); draw(0);
-  window.addEventListener('resize', function () { size(); draw(performance.now()); });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { size(); draw(performance.now()); });
-  if (!still) {
-    var seen = true;
-    if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { seen = es[0].isIntersecting; }).observe(cv);
-    (function loop(ms) { if (seen) draw(ms); requestAnimationFrame(loop); })(0);
-  }
-})();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/app.js"></script>
+<script src="assets/grupo.js"></script>
 </body>
 </html>
