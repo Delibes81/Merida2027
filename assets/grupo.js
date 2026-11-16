@@ -5,12 +5,11 @@
   'use strict';
 
   var cfg = window.TRIP_CONFIG || {};
-  // hh: con quién hace cuentas (familia, pareja o por su cuenta).
+  // hh: con quién hace cuentas (pareja o por su cuenta).
   // from/to: días que pasa con el grupo cuando no son los del viaje completo.
   var MEMBERS = [
     { id: 'liliana', name: 'Liliana', adult: true, h: 335, hh: 'dl' },
     { id: 'delibes', name: 'Delibes', adult: true, h: 20, hh: 'dl' },
-    { id: 'alex', name: 'Alex', adult: false, h: 45, hh: 'dl' },
     { id: 'jorge', name: 'Jorge', adult: true, h: 170, hh: 'jz' },
     { id: 'zamy', name: 'Zamy', adult: true, h: 150, hh: 'jz' },
     { id: 'chang', name: 'Chang', adult: true, h: 200, hh: 'cs' },
@@ -295,7 +294,7 @@
     $('flDepTime').value = f.dep_time ? String(f.dep_time).slice(0, 5) : '';
     $('flDepNo').value = f.dep_flight || '';
   }
-  // Al registrar un vuelo se puede aplicar a la familia o pareja de una vez.
+  // Al registrar un vuelo se puede aplicar a la pareja de una vez.
   function fillAlso(id) {
     var mates = MEMBERS.filter(function (m) { return m.hh === byId[id].hh && m.id !== id; });
     $('flAlsoBox').hidden = !mates.length;
@@ -449,7 +448,7 @@
   }
 
   // ── Gastos ──
-  // El gasto se divide por persona, pero las cuentas se hacen por familia o pareja:
+  // El gasto se divide por persona, pero las cuentas se hacen por pareja:
   // el saldo es lo que pagó cada grupo menos las partes de su gente, en centavos.
   // Los centavos sobrantes de una división se reparten de uno en uno.
   function balances(list) {
@@ -510,11 +509,11 @@
   $('exSplit').innerHTML = MEMBERS.map(function (m) {
     return '<label><input type="checkbox" name="split" value="' + m.id + '"' + (m.adult ? ' checked' : '') + '><span>' + av(m) + esc(m.name) + '</span></label>';
   }).join('');
-  // Atajos para dividir: todos los adultos, o solo quienes siguen hasta el martes.
+  // Atajos para dividir: todos, o solo quienes siguen hasta el martes.
   var adults = MEMBERS.filter(function (m) { return m.adult; });
   var staying = adults.filter(function (m) { return !m.to; });
   var early = adults.filter(function (m) { return m.to; }).map(function (m) { return m.name; });
-  $('exPresets').innerHTML = '<button type="button" class="vote" data-preset="all">Los ' + adults.length + ' adultos</button>' +
+  $('exPresets').innerHTML = '<button type="button" class="vote" data-preset="all">Los ' + adults.length + '</button>' +
     (early.length ? '<button type="button" class="vote" data-preset="stay">Sin ' + esc(early.join(' ni ')) + ' (' + staying.length + ')</button>' : '');
   $('exPresets').addEventListener('click', function (e) {
     var b = e.target.closest('[data-preset]');
