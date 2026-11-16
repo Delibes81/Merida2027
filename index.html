@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Mérida 2027</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: la hoja del plan hecha página. Una tira de seis días (jue–mar) con las
+   barras de hospedaje debajo, igual que el dibujo; después el detalle en una columna. */
+:root {
+  --bg: #F1F6F3;
+  --surface: #FFFFFF;
+  --fg: #0F2E2D;
+  --muted: #55706B;
+  --line: #D3E0DA;
+  --teal: #0B7A78;
+  --teal-soft: #DCEFEC;
+  --sun: #F0BC2E;
+  --sun-ink: #3A2A00;
+  --pink: #B81F66;
+  --pink-soft: #FBE3EE;
+  --hero-bg: #0D3B3A;
+  --hero-fg: #F4FAF7;
+  --hero-muted: #A9CDC7;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Instrument Sans", "Helvetica Neue", Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0B1C1C; --surface: #122929; --fg: #E5EFEC; --muted: #93AFA9; --line: #24403E;
+    --teal: #48C9C3; --teal-soft: #163B3A; --sun: #F2C14E; --sun-ink: #2E2100;
+    --pink: #F27CB0; --pink-soft: #3A1B2B;
+    --hero-bg: #0F3332; --hero-fg: #F4FAF7; --hero-muted: #9CC3BC;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0B1C1C; --surface: #122929; --fg: #E5EFEC; --muted: #93AFA9; --line: #24403E;
+  --teal: #48C9C3; --teal-soft: #163B3A; --sun: #F2C14E; --sun-ink: #2E2100;
+  --pink: #F27CB0; --pink-soft: #3A1B2B;
+  --hero-bg: #0F3332; --hero-fg: #F4FAF7; --hero-muted: #9CC3BC;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 16px/1.55 var(--body);
+}
+.wrap {
+  max-width: 880px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.1; }
+p { margin: 0; }
+a { color: var(--teal); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+.label {
+  font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted);
+}
+
+/* Hero */
+.hero { background: var(--hero-bg); color: var(--hero-fg); }
+.hero .wrap { padding-block: 40px 36px; display: flex; flex-direction: column; gap: 24px; }
+.hero .label { color: var(--hero-muted); }
+.hero h1 { font-size: clamp(44px, 11vw, 84px); font-weight: 800; letter-spacing: -.03em; }
+.hero h1 span { color: var(--sun); }
+.hero-sub { font-size: 18px; color: var(--hero-muted); max-width: 46ch; }
+.count { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: baseline; }
+.count div { display: flex; align-items: baseline; gap: 6px; }
+.count b { font: 800 clamp(30px, 7vw, 44px)/1 var(--display); font-variant-numeric: tabular-nums; }
+.count small { font-size: 14px; color: var(--hero-muted); }
+.count-to { font-size: 14px; color: var(--hero-muted); }
+
+main.wrap { padding-block: 36px 64px; display: flex; flex-direction: column; gap: 52px; }
+section { display: flex; flex-direction: column; gap: 16px; }
+section > h2 { font-size: 28px; font-weight: 700; letter-spacing: -.01em; }
+.lead { color: var(--muted); max-width: 62ch; }
+
+/* Tira de la semana */
+.week-scroll { overflow-x: auto; }
+.week { min-width: 600px; display: grid; grid-template-columns: repeat(12, 1fr); row-gap: 10px; }
+.day {
+  grid-column: span 2; padding: 12px 8px 14px; border-left: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+}
+.day:first-child { border-left: 0; padding-left: 0; }
+.day .dow { font-size: 12px; font-weight: 600; letter-spacing: .09em; color: var(--muted); }
+.day .num { font: 800 34px/1 var(--display); font-variant-numeric: tabular-nums; }
+.day .num small { font: 500 13px var(--body); color: var(--muted); margin-left: 3px; }
+.day .what { font-size: 14px; font-weight: 600; }
+.day .when { font-size: 13px; color: var(--muted); }
+.day.boda .num, .day.boda .what { color: var(--pink); }
+.stay {
+  padding: 10px 12px; border-radius: 6px; font-size: 14px; font-weight: 600; min-width: 0;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.stay span { font-weight: 400; font-size: 13px; }
+.stay.h { grid-column: 1 / 6; background: var(--pink-soft); color: var(--pink); }
+.stay.c { grid-column: 6 / 10; background: var(--teal-soft); color: var(--teal); }
+.stay.m { grid-column: 10 / 13; background: var(--sun); color: var(--sun-ink); }
+
+/* Día por día */
+.days { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.days li {
+  display: grid; grid-template-columns: 92px 1fr; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--line);
+}
+.days .d { font: 700 17px/1.3 var(--display); }
+.days .d small { display: block; font: 400 13px var(--body); color: var(--muted); }
+.days .body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.days .body p { color: var(--muted); }
+.days .body strong { color: var(--fg); font-weight: 600; }
+.tbd {
+  display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 99px;
+  border: 1px dashed var(--muted); color: var(--muted); white-space: nowrap;
+}
+
+/* Lugares */
+.places { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.place {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px;
+  display: flex; flex-direction: column; gap: 8px; min-width: 0;
+}
+.place h3 { font-size: 19px; font-weight: 700; }
+.place p { font-size: 15px; color: var(--muted); }
+.place ul { margin: 0; padding-left: 18px; font-size: 15px; color: var(--muted); }
+.place .go { margin-top: auto; font-size: 14px; font-weight: 600; }
+
+/* Pendientes */
+.todo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.todo label {
+  display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; cursor: pointer;
+}
+.todo input { width: 20px; height: 20px; accent-color: var(--teal); margin: 0; }
+.todo .t { min-width: 0; font-weight: 500; }
+.todo .t small { display: block; font-weight: 400; font-size: 14px; color: var(--muted); }
+.todo input:checked ~ .t { text-decoration: line-through; color: var(--muted); }
+.due { font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 99px; background: var(--sun); color: var(--sun-ink); white-space: nowrap; }
+.note { font-size: 14px; color: var(--muted); }
+
+/* Camioneta */
+.calc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-wrap: wrap; gap: 20px 32px; align-items: flex-end; }
+.fields { display: flex; flex-wrap: wrap; gap: 12px; }
+.fields label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.fields input {
+  width: 116px; padding: 9px 10px; font: 500 16px var(--body); color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; font-variant-numeric: tabular-nums;
+}
+.result { display: flex; flex-direction: column; gap: 2px; }
+.result b { font: 800 40px/1 var(--display); color: var(--teal); font-variant-numeric: tabular-nums; }
+.result span { font-size: 14px; color: var(--muted); }
+
+.people { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.people li { padding: 6px 14px; border-radius: 99px; background: var(--teal-soft); color: var(--teal); font-weight: 600; font-size: 15px; }
+.people li.q { background: none; border: 1px dashed var(--muted); color: var(--muted); font-weight: 500; }
+
+footer { border-top: 1px solid var(--line); }
+footer .wrap { padding-block: 20px 28px; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 520px) {
+  .days li { grid-template-columns: 1fr; gap: 6px; }
+  .todo label { grid-template-columns: 22px 1fr; }
+  .todo .due { grid-column: 2; justify-self: start; }
+}
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="label">Boda en Yucatán · jue 25 feb – mar 2 mar 2027</p>
+    <h1>Mérida <span>2027</span></h1>
+    <p class="hero-sub">Tres días de boda en la hacienda y tres más por nuestra cuenta entre playa, cenotes y la ciudad.</p>
+    <div>
+      <div class="count" id="count" aria-live="off">
+        <div><b id="cd">–</b><small>días</small></div>
+        <div><b id="ch">–</b><small>horas</small></div>
+        <div><b id="cm">–</b><small>min</small></div>
+      </div>
+      <p class="count-to" id="countTo">para el rompehielos: jueves 25 de febrero, 5:00 pm</p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section aria-labelledby="h-semana">
+    <h2 id="h-semana">La semana</h2>
+    <div class="week-scroll">
+      <div class="week">
+        <div class="day"><span class="dow">JUE</span><span class="num">25<small>feb</small></span><span class="what">Rompehielos</span><span class="when">5:00 pm</span></div>
+        <div class="day boda"><span class="dow">VIE</span><span class="num">26</span><span class="what">Boda</span><span class="when">Hacienda</span></div>
+        <div class="day"><span class="dow">SÁB</span><span class="num">27</span><span class="what">Brunch</span><span class="when">y salida a la playa</span></div>
+        <div class="day"><span class="dow">DOM</span><span class="num">28</span><span class="what">Libre</span><span class="when">Playa / cenotes</span></div>
+        <div class="day"><span class="dow">LUN</span><span class="num">01<small>mar</small></span><span class="what">Libre</span><span class="when">Cambio a Mérida</span></div>
+        <div class="day"><span class="dow">MAR</span><span class="num">02</span><span class="what">Regreso</span><span class="when">MID → MEX</span></div>
+        <div class="stay h">Hacienda<span>2 noches · 25 y 26</span></div>
+        <div class="stay c">Airbnb Chuburná<span>2 noches · 27 y 28</span></div>
+        <div class="stay m">Airbnb Mérida<span>1 noche · 1 mar</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-dias">
+    <h2 id="h-dias">Día por día</h2>
+    <ul class="days">
+      <li>
+        <div class="d">Jue 25<small>febrero</small></div>
+        <div class="body">
+          <p><strong>Vuelo MEX → MID.</strong> Liliana, Delibes y Alex van en el mismo vuelo; la idea es que todos lleguen a una hora parecida. <span class="tbd">hora del vuelo por confirmar</span></p>
+          <p><strong>5:00 pm · Rompehielos.</strong> <span class="tbd">lugar por confirmar</span></p>
+        </div>
+      </li>
+      <li>
+        <div class="d">Vie 26<small>febrero</small></div>
+        <div class="body">
+          <p><strong>La boda.</strong> En la hacienda. <span class="tbd">hora y código de vestimenta por confirmar</span></p>
+        </div>
+      </li>
+      <li>
+        <div class="d">Sáb 27<small>febrero</small></div>
+        <div class="body">
+          <p><strong>Brunch</strong> con los novios y salida de la hacienda.</p>
+          <p>De aquí en adelante vamos por nuestra cuenta: traslado en camioneta al <strong>Airbnb de Chuburná</strong>.</p>
+        </div>
+      </li>
+      <li>
+        <div class="d">Dom 28<small>febrero</small></div>
+        <div class="body">
+          <p><strong>Día libre en la costa.</strong> Opciones: Playa de los Columpios, Playa de los Cerditos, cenotes cercanos.</p>
+        </div>
+      </li>
+      <li>
+        <div class="d">Lun 1<small>marzo</small></div>
+        <div class="body">
+          <p><strong>Día libre</strong> para cenotes o un destino cercano, y cambio al <strong>Airbnb de Mérida</strong> para la última noche.</p>
+        </div>
+      </li>
+      <li>
+        <div class="d">Mar 2<small>marzo</small></div>
+        <div class="body">
+          <p><strong>Vuelo MID → MEX.</strong> Entrega de la camioneta antes de ir al aeropuerto. <span class="tbd">hora del vuelo por confirmar</span></p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-lugares">
+    <h2 id="h-lugares">A dónde ir</h2>
+    <p class="lead">Lo que anotamos en la hoja. Las ideas de cenotes y destinos son un punto de partida para investigar, no un plan cerrado.</p>
+    <div class="places">
+      <article class="place">
+        <p class="label">Playa</p>
+        <h3>Playa de los Columpios</h3>
+        <p>Columpios dentro del mar en la zona de Chuburná Puerto, cerca del Airbnb.</p>
+        <a class="go" href="https://www.google.com/maps/search/?api=1&query=Playa+de+los+Columpios+Chuburn%C3%A1+Puerto+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa</a>
+      </article>
+      <article class="place">
+        <p class="label">Playa</p>
+        <h3>Playa de los Cerditos</h3>
+        <p>Pig Beach, en Progreso: una playa con cerditos rescatados. Hay que revisar horarios antes de ir.</p>
+        <a class="go" href="https://www.google.com/maps/search/?api=1&query=Pig+Beach+Progreso+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa</a>
+      </article>
+      <article class="place">
+        <p class="label">Cenotes · Jorge investiga</p>
+        <h3>Cenotes cerca</h3>
+        <p>Ideas para arrancar:</p>
+        <ul>
+          <li>Xlacah, en Dzibilchaltún, entre Mérida y Progreso</li>
+          <li>Ruta de Cuzamá y Homún</li>
+          <li>San Antonio Mulix (X'batún y Dzonbacal)</li>
+        </ul>
+        <a class="go" href="https://www.google.com/maps/search/?api=1&query=cenotes+cerca+de+M%C3%A9rida+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa</a>
+      </article>
+      <article class="place">
+        <p class="label">Paseos de un día</p>
+        <h3>Destinos cercanos</h3>
+        <p>Ideas para arrancar:</p>
+        <ul>
+          <li>Progreso y su malecón</li>
+          <li>Sisal</li>
+          <li>Izamal, la ciudad amarilla</li>
+          <li>Uxmal</li>
+        </ul>
+        <a class="go" href="https://www.google.com/maps/search/?api=1&query=M%C3%A9rida+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa</a>
+      </article>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-pend">
+    <h2 id="h-pend">Pendientes</h2>
+    <ul class="todo" id="todo">
+      <li><label><input type="checkbox" id="t-vuelos"><span class="t">1 · Comprar vuelos<small>MEX ⇄ MID, 25 feb – 2 mar</small></span><span class="due" id="dueVuelos">antes del 10 dic</span></label></li>
+      <li><label><input type="checkbox" id="t-camioneta"><span class="t">2 · Reservar la camioneta<small>9 personas, 6 días</small></span></label></li>
+      <li><label><input type="checkbox" id="t-megaplan"><span class="t">3 · Megaplan<small>Delibes y Jorge lo desarrollan</small></span></label></li>
+      <li><label><input type="checkbox" id="t-rutas"><span class="t">Rutas<small>Hacienda → Chuburná → Mérida → aeropuerto</small></span></label></li>
+      <li><label><input type="checkbox" id="t-recos"><span class="t">Recomendaciones<small>Dónde comer y qué no perderse</small></span></label></li>
+      <li><label><input type="checkbox" id="t-cenotes"><span class="t">Elegir cenotes<small>Jorge investiga</small></span></label></li>
+      <li><label><input type="checkbox" id="t-airbnb1"><span class="t">Reservar Airbnb en Chuburná<small>Noches del 27 y 28 de febrero</small></span></label></li>
+      <li><label><input type="checkbox" id="t-airbnb2"><span class="t">Reservar Airbnb en Mérida<small>Noche del 1 de marzo</small></span></label></li>
+    </ul>
+    <p class="note">Por ahora las palomitas se guardan solo en tu dispositivo.</p>
+  </section>
+
+  <section aria-labelledby="h-cam">
+    <h2 id="h-cam">Camioneta</h2>
+    <div class="calc">
+      <div class="fields">
+        <label for="c-total">Renta total (MXN)<input id="c-total" type="number" inputmode="numeric" min="0" step="100" value="13000"></label>
+        <label for="c-pers">Personas<input id="c-pers" type="number" inputmode="numeric" min="1" step="1" value="9"></label>
+        <label for="c-dias">Días<input id="c-dias" type="number" inputmode="numeric" min="1" step="1" value="6"></label>
+      </div>
+      <div class="result">
+        <b id="c-pp">$1,444</b>
+        <span id="c-det">por persona · $241 por persona al día</span>
+      </div>
+    </div>
+    <p class="note">Cotización de la hoja: 13 mil por 6 días. No incluye gasolina ni casetas.</p>
+  </section>
+
+  <section aria-labelledby="h-vuelo">
+    <h2 id="h-vuelo">Vuelo de referencia</h2>
+    <p class="lead">Aeroméxico, Ciudad de México ⇄ Mérida, ida el jueves 25 de febrero y vuelta el martes 2 de marzo. Cotizado el 16 de noviembre en unos <strong>$3,900 MXN por persona</strong> en viaje redondo, con equipaje de mano de 10 kg. Si pueden, compren el mismo vuelo para llegar juntos.</p>
+  </section>
+
+  <section aria-labelledby="h-grupo">
+    <h2 id="h-grupo">El grupo</h2>
+    <ul class="people">
+      <li>Liliana</li><li>Delibes</li><li>Alex</li><li>Jorge</li><li class="q">+ 5 por anotar</li>
+    </ul>
+    <p class="note">Somos 9 en la camioneta.</p>
+  </section>
+
+</main>
+
+<footer><div class="wrap">Mérida, Yucatán · 25 feb – 2 mar 2027</div></footer>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var DAY = 864e5;
+
+  // Cuenta regresiva al rompehielos (hora de Mérida, UTC-6)
+  var target = new Date('2027-02-25T17:00:00-06:00').getTime();
+  function tick() {
+    var ms = target - Date.now();
+    if (ms <= 0) {
+      $('count').hidden = true;
+      $('countTo').textContent = ms > -6 * DAY ? '¡Ya estamos en Mérida!' : 'Qué viaje. Hasta la próxima.';
+      return;
+    }
+    $('cd').textContent = Math.floor(ms / DAY);
+    $('ch').textContent = Math.floor(ms % DAY / 36e5);
+    $('cm').textContent = Math.floor(ms % 36e5 / 6e4);
+  }
+  tick(); setInterval(tick, 30000);
+
+  // Fecha límite de vuelos
+  var left = Math.ceil((new Date('2026-12-10T23:59:59-06:00').getTime() - Date.now()) / DAY);
+  $('dueVuelos').textContent = left > 1 ? 'antes del 10 dic · faltan ' + left + ' días'
+    : left === 1 ? 'antes del 10 dic · último día' : 'venció el 10 dic';
+
+  // Pendientes (se guardan en este dispositivo)
+  var KEY = 'merida2027.todo', saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) {}
+  [].forEach.call(document.querySelectorAll('#todo input'), function (cb) {
+    cb.checked = !!saved[cb.id];
+    cb.addEventListener('change', function () {
+      saved[cb.id] = cb.checked;
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+    });
+  });
+
+  // Camioneta
+  var mxn = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
+  function calc() {
+    var total = +$('c-total').value || 0;
+    var pers = Math.max(1, +$('c-pers').value || 1);
+    var dias = Math.max(1, +$('c-dias').value || 1);
+    $('c-pp').textContent = mxn.format(total / pers);
+    $('c-det').textContent = 'por persona · ' + mxn.format(total / pers / dias) + ' por persona al día';
+  }
+  ['c-total', 'c-pers', 'c-dias'].forEach(function (id) { $(id).addEventListener('input', calc); });
+  calc();
+})();
+</script>
+</body>
+</html>
