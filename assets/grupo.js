@@ -226,7 +226,8 @@
     document.body.classList.toggle('joined', !!me);
     var b = $('meBtn');
     b.classList.toggle('in', !!me);
-    b.innerHTML = me ? av(me) + esc(me.name) : 'Entrar';
+    b.innerHTML = me ? av(me) + '<span class="me-name">' + esc(me.name) + '</span>' : 'Entrar';
+    if (me) b.setAttribute('aria-label', 'Tu sesión: ' + me.name); else b.removeAttribute('aria-label');
     paintTodos(); paintActs(); paintCrew(); paintFlights(); paintStays(); paintExpenses();
     painters.forEach(function (f) { f(); });
   }
@@ -451,7 +452,7 @@
       if (d.checkout) facts += '<div><dt>' + (b.car ? 'Entrega' : 'Check-out') + '</dt><dd>' + String(d.checkout).slice(0, 5) + '</dd></div>';
       if (d.total != null && d.total !== '') facts += '<div><dt>Total</dt><dd>' + money(Math.round(Number(d.total) * 100)) + '</dd></div>';
       var maps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(d.address || (b.id === 'hacienda' ? b.name + ' ' + b.place : b.place));
-      return '<article class="card stay-card rise" style="--c: var(--' + b.c + ')">' +
+      return '<article class="card stay-card rise c-' + b.c + '">' +
         '<div class="stay-top">' +
           (me ? (by ? '<span class="pill">Reservó ' + esc(by.name) + '</span>' : '<span class="pill open">' + (b.id === 'hacienda' ? 'Cada quien reserva' : 'Por reservar') + '</span>') : '<span></span>') +
           (me ? '<button class="icon-btn" type="button" data-stay="' + b.id + '" aria-label="Editar ' + esc(b.name) + '">' + PENCIL + '</button>' : '') +
@@ -468,7 +469,7 @@
           '<a class="btn" href="' + esc(maps) + '" target="_blank" rel="noopener">Cómo llegar</a>' +
           (me && by && Number(d.total) > 0 ? '<button class="btn" type="button" data-stay-ex="' + b.id + '">Pasar a gastos</button>' : '') +
         '</div></article>';
-    }).join('') + (me && T.docsHtml ? '<article class="card stay-card" style="--c: var(--muted)"><div class="stay-top"><span></span></div>' +
+    }).join('') + (me && T.docsHtml ? '<article class="card stay-card c-muted"><div class="stay-top"><span></span></div>' +
       '<p class="eyebrow">Lo demás</p><h3>Otros documentos</h3><p>Seguros, pases de abordar, lo que convenga tener a la mano.</p>' + T.docsHtml('general') + '</article>' : '');
   }
   $('stBy').innerHTML = '<option value="">Nadie todavía</option>' + MEMBERS.filter(function (m) { return m.adult; })

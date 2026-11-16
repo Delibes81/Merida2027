@@ -23,6 +23,10 @@ Sitio del grupo para el viaje a la boda de Clau y Diego en Yucatán (25 feb – 
 
 La página no tiene paso de build. La única dependencia es la de `api/ticket.js`, que Vercel instala solo.
 
+## Tema claro y oscuro
+
+La página abre en claro; el interruptor de la barra superior cambia a oscuro y la elección se guarda en cada teléfono (`localStorage`, clave `merida2027.theme`). Todos los colores son fichas al inicio de `assets/styles.css`: `:root` es el tema claro y `:root[data-theme="dark"]` el oscuro. Los acentos tienen dos versiones: `--pink`, `--aqua`, `--sun` y `--coral` para rellenos (siempre con texto `--ink` encima) y `--pink-t`, `--aqua-t`, `--sun-t` y `--coral-t` cuando el color es texto sobre el fondo. Un bloque toma su color con las clases `c-pink`, `c-aqua`, `c-sun` o `c-coral`. El mar de la portada y el mapa leen las mismas fichas y se repintan con el evento `themechange`.
+
 ## Lectura de tickets (opcional)
 
 Para que la foto de un ticket se convierta en renglones, agrega en Vercel (*Settings → Environment Variables*) la variable `ANTHROPIC_API_KEY` con una clave de la consola de Anthropic y vuelve a desplegar. Sin ella todo funciona igual, solo que los renglones se capturan a mano. La función solo responde a quien ya entró al grupo, y cada lectura tiene un costo pequeño que se cobra a esa clave.

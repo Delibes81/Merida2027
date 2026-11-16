@@ -24,7 +24,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="canonical" href="https://merida2027.vercel.app/">
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="theme-color" content="#06181D">
+<meta name="theme-color" content="#FBF6EC">
+<script>try { if (localStorage.getItem('merida2027.theme') === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); } catch (e) {}</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Unbounded:wght@500;700;800&display=swap">
 <link rel="stylesheet" href="assets/styles.css">
 </head>
@@ -46,6 +47,12 @@
       <a href="#costos">Costos</a>
       <a href="#grupo">Grupo</a>
     </nav>
+    <button class="theme" id="themeBtn" type="button" role="switch" aria-checked="false" aria-label="Modo oscuro" title="Cambiar a modo oscuro">
+      <span class="theme-thumb" aria-hidden="true">
+        <svg class="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </span>
+    </button>
     <button class="me-btn" id="meBtn" type="button">Entrar</button>
   </div>
 </div>
@@ -111,7 +118,7 @@
     </div>
 
     <div class="tl">
-      <article class="tl-day rise" id="jue" style="--c: var(--pink)">
+      <article class="tl-day rise c-pink" id="jue">
         <div class="tl-date"><b>25</b><span>Jue · feb</span></div>
         <div class="tl-body">
           <p class="tl-where">Hacienda Sotuta de Peón</p>
@@ -123,7 +130,7 @@
           </ul>
         </div>
       </article>
-      <article class="tl-day rise" id="vie" style="--c: var(--pink)">
+      <article class="tl-day rise c-pink" id="vie">
         <div class="tl-date"><b class="grad">26</b><span>Vie · feb</span></div>
         <div class="tl-body">
           <p class="tl-where">Hacienda Sotuta de Peón</p>
@@ -135,7 +142,7 @@
           </ul>
         </div>
       </article>
-      <article class="tl-day rise" id="sab" style="--c: var(--aqua)">
+      <article class="tl-day rise c-aqua" id="sab">
         <div class="tl-date"><b>27</b><span>Sáb · feb</span></div>
         <div class="tl-body">
           <p class="tl-where">Hacienda → Chuburná</p>
@@ -146,7 +153,7 @@
           </ul>
         </div>
       </article>
-      <article class="tl-day rise" id="dom" style="--c: var(--aqua)">
+      <article class="tl-day rise c-aqua" id="dom">
         <div class="tl-date"><b>28</b><span>Dom · feb</span></div>
         <div class="tl-body">
           <p class="tl-where">Chuburná</p>
@@ -157,7 +164,7 @@
           </ul>
         </div>
       </article>
-      <article class="tl-day rise" id="lun" style="--c: var(--sun)">
+      <article class="tl-day rise c-sun" id="lun">
         <div class="tl-date"><b>01</b><span>Lun · mar</span></div>
         <div class="tl-body">
           <p class="tl-where">Chuburná → Mérida</p>
@@ -168,7 +175,7 @@
           </ul>
         </div>
       </article>
-      <article class="tl-day rise" id="mar" style="--c: var(--sun)">
+      <article class="tl-day rise c-sun" id="mar">
         <div class="tl-date"><b>02</b><span>Mar · mar</span></div>
         <div class="tl-body">
           <p class="tl-where">Mérida → Ciudad de México</p>
@@ -231,31 +238,31 @@
       <div class="card map rise" id="map">
         <svg viewBox="0 0 840 720" role="img" aria-label="Mapa de la ruta: aeropuerto de Mérida, Hacienda Sotuta de Peón, Chuburná, Mérida y de vuelta al aeropuerto">
           <defs>
-            <linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0F4A57"/><stop offset="1" stop-color="#0B3340"/></linearGradient>
+            <linearGradient id="seaG" class="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0"/><stop offset="1"/></linearGradient>
           </defs>
           <path d="M0 0H840V22C780 30 700 44 600 58C520 68 460 84 406 88C350 94 300 108 262 120C200 140 130 170 65 206C40 220 15 238 0 250Z" fill="url(#seaG)"/>
-          <path d="M840 22C780 30 700 44 600 58C520 68 460 84 406 88C350 94 300 108 262 120C200 140 130 170 65 206C40 220 15 238 0 250" fill="none" stroke="#3FE0CF" stroke-opacity=".5" stroke-width="2"/>
+          <path d="M840 22C780 30 700 44 600 58C520 68 460 84 406 88C350 94 300 108 262 120C200 140 130 170 65 206C40 220 15 238 0 250" class="coast"/>
           <text class="sea-lbl" x="520" y="34">GOLFO DE MÉXICO</text>
 
           <g class="sec-pt">
-            <circle cx="406" cy="97" r="6" fill="#9AB6B6"/><text x="420" y="124">Progreso · Pig Beach</text>
-            <circle cx="65" cy="215" r="6" fill="#9AB6B6"/><text x="56" y="250">Sisal</text>
-            <circle cx="472" cy="290" r="6" fill="#9AB6B6"/><text x="488" y="297">Dzibilchaltún</text>
-            <circle cx="731" cy="638" r="6" fill="#9AB6B6"/><text x="826" y="612" text-anchor="end">Cuzamá · Homún</text>
+            <circle cx="406" cy="97" r="6"/><text x="420" y="124">Progreso · Pig Beach</text>
+            <circle cx="65" cy="215" r="6"/><text x="56" y="250">Sisal</text>
+            <circle cx="472" cy="290" r="6"/><text x="488" y="297">Dzibilchaltún</text>
+            <circle cx="731" cy="638" r="6"/><text x="826" y="612" text-anchor="end">Cuzamá · Homún</text>
             <text x="826" y="420" text-anchor="end">Izamal →</text>
             <text x="300" y="704">↓ Uxmal</text>
           </g>
 
-          <path class="leg l1" pathLength="1" d="M413 443Q540 520 504 645" stroke="#FF5C93"/>
-          <path class="leg l2" pathLength="1" d="M504 645C240 640 150 360 262 130" stroke="#3FE0CF"/>
-          <path class="leg l3" pathLength="1" d="M262 130Q440 180 446 413" stroke="#FFC845"/>
-          <path class="leg l4" pathLength="1" d="M446 413L413 443" stroke="#F3F8F5"/>
+          <path class="leg l1 k-h" pathLength="1" d="M413 443Q540 520 504 645"/>
+          <path class="leg l2 k-c" pathLength="1" d="M504 645C240 640 150 360 262 130"/>
+          <path class="leg l3 k-m" pathLength="1" d="M262 130Q440 180 446 413"/>
+          <path class="leg l4 k-a" pathLength="1" d="M446 413L413 443"/>
 
           <g class="stop">
-            <circle cx="413" cy="443" r="10" fill="#F3F8F5"/><text x="396" y="478" text-anchor="end">Aeropuerto</text>
-            <circle cx="504" cy="645" r="14" fill="#FF5C93"/><text x="528" y="640">Hacienda</text><text class="sub" x="528" y="670">Sotuta de Peón</text>
-            <circle cx="262" cy="130" r="14" fill="#3FE0CF"/><text x="282" y="182">Chuburná</text>
-            <circle cx="446" cy="413" r="14" fill="#FFC845"/><text x="472" y="408">Mérida</text>
+            <circle class="k-a" cx="413" cy="443" r="10"/><text x="396" y="478" text-anchor="end">Aeropuerto</text>
+            <circle class="k-h" cx="504" cy="645" r="14"/><text x="528" y="640">Hacienda</text><text class="sub" x="528" y="670">Sotuta de Peón</text>
+            <circle class="k-c" cx="262" cy="130" r="14"/><text x="282" y="182">Chuburná</text>
+            <circle class="k-m" cx="446" cy="413" r="14"/><text x="472" y="408">Mérida</text>
           </g>
         </svg>
         <div id="lmap" hidden></div>
@@ -263,10 +270,10 @@
       </div>
       <div>
         <ol class="legs">
-          <li class="card rise" style="--c: var(--pink)"><span class="n">1</span><div><b>Aeropuerto → Hacienda</b><span>Jue 25 · 33 km, unos 40 min; recogemos la camioneta al llegar</span></div></li>
-          <li class="card rise" style="--c: var(--aqua)"><span class="n">2</span><div><b>Hacienda → Chuburná</b><span>Sáb 27 · 89 km, cerca de 1 h 30</span></div></li>
-          <li class="card rise" style="--c: var(--sun)"><span class="n">3</span><div><b>Chuburná → Mérida</b><span>Lun 1 · 51 km, unos 50 min</span></div></li>
-          <li class="card rise" style="--c: var(--fg)"><span class="n">4</span><div><b>Mérida → Aeropuerto</b><span>Mar 2 · 7 km, de 10 a 20 min según el tráfico</span></div></li>
+          <li class="card rise c-pink"><span class="n">1</span><div><b>Aeropuerto → Hacienda</b><span>Jue 25 · 33 km, unos 40 min; recogemos la camioneta al llegar</span></div></li>
+          <li class="card rise c-aqua"><span class="n">2</span><div><b>Hacienda → Chuburná</b><span>Sáb 27 · 89 km, cerca de 1 h 30</span></div></li>
+          <li class="card rise c-sun"><span class="n">3</span><div><b>Chuburná → Mérida</b><span>Lun 1 · 51 km, unos 50 min</span></div></li>
+          <li class="card rise c-fg"><span class="n">4</span><div><b>Mérida → Aeropuerto</b><span>Mar 2 · 7 km, de 10 a 20 min según el tráfico</span></div></li>
         </ol>
         <p class="fine" id="mapNote" style="margin-top:14px">Mapa esquemático. Distancias y tiempos por carretera según OpenStreetMap, sin contar tráfico.</p>
       </div>
@@ -283,11 +290,11 @@
     <div id="flBody" hidden>
       <div class="fl-bar"><p class="mono" id="flCount"></p><button class="btn hot" id="flMine" type="button">Registrar vuelo</button></div>
       <div class="boards">
-        <div class="card board rise" style="--c: var(--aqua)">
+        <div class="card board rise c-aqua">
           <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 13l14 4M5 13V8l2 .5 2 4M11 14.500V5l2 .5 3 10.500"/></svg>Llegadas a Mérida</h3>
           <ul id="flArr"></ul>
         </div>
-        <div class="card board rise" style="--c: var(--sun)">
+        <div class="card board rise c-sun">
           <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M4 15l15-5.500M4 15l-1-5 2-.5 3 3M10 12.800 7 5l2-.700 7 6"/></svg>Salidas de Mérida</h3>
           <ul id="flDep"></ul>
         </div>
@@ -312,7 +319,7 @@
       <p>Lo que anotamos en la hoja. Los cenotes y destinos son ideas para empezar a investigar. Marca a cuáles te apuntas y vemos qué gana.</p>
     </div>
     <div class="places">
-      <article class="card place rise" style="--c: var(--aqua)">
+      <article class="card place rise c-aqua">
         <span class="ico"><svg viewBox="0 0 24 24"><path d="M4 21 8 3M20 21 16 3M7 5h10M10 5v9M14 5v9M9 14h6"/></svg></span>
         <p class="eyebrow">Playa</p>
         <h3>Playa de los Columpios</h3>
@@ -320,7 +327,7 @@
         <div class="act" data-act="columpios"></div>
         <a class="go" href="https://www.google.com/maps/search/?api=1&query=Playa+de+los+Columpios+Chuburn%C3%A1+Puerto+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa →</a>
       </article>
-      <article class="card place rise" style="--c: var(--pink)">
+      <article class="card place rise c-pink">
         <span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><ellipse cx="12" cy="15" rx="3.5" ry="2.5"/><path d="M10.8 15h.01M13.2 15h.01M9 10h.01M15 10h.01M6 7 5 4l3 1.6M18 7l1-3-3 1.6"/></svg></span>
         <p class="eyebrow">Playa</p>
         <h3>Playa de los Cerditos</h3>
@@ -328,7 +335,7 @@
         <div class="act" data-act="cerditos"></div>
         <a class="go" href="https://www.google.com/maps/search/?api=1&query=Pig+Beach+Progreso+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa →</a>
       </article>
-      <article class="card place rise" style="--c: var(--sun)">
+      <article class="card place rise c-sun">
         <span class="ico"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="13" rx="9" ry="6"/><ellipse cx="12" cy="13" rx="5" ry="3"/><path d="M12 2v5M9 4l3 3 3-3"/></svg></span>
         <p class="eyebrow">Cenotes · Jorge investiga</p>
         <h3>Cenotes cerca</h3>
@@ -339,7 +346,7 @@
         </ul>
         <a class="go" href="https://www.google.com/maps/search/?api=1&query=cenotes+cerca+de+M%C3%A9rida+Yucat%C3%A1n" target="_blank" rel="noopener">Ver en el mapa →</a>
       </article>
-      <article class="card place rise" style="--c: var(--coral)">
+      <article class="card place rise c-coral">
         <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 20h18M5 20l2-4h10l2 4M7 16l1.5-4h7L17 16M8.500 12 10 8h4l1.500 4M10 8V5h4v3"/></svg></span>
         <p class="eyebrow">Paseos de un día</p>
         <h3>Destinos cercanos</h3>

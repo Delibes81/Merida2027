@@ -12,6 +12,30 @@
   } catch (e) {}
   var now = window.tripNow = function () { return Date.now() + (shift || 0); };
 
+  // Tema claro (el que abre) u oscuro. La elección se guarda en el teléfono; index.html la aplica antes de pintar.
+  var root = document.documentElement, themeBtn = $('themeBtn');
+  var token = window.tripToken = function (name) { return getComputedStyle(root).getPropertyValue(name).trim(); };
+  function syncTheme() {
+    var dark = root.getAttribute('data-theme') === 'dark';
+    themeBtn.setAttribute('aria-checked', dark);
+    themeBtn.title = dark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+    document.querySelector('meta[name="theme-color"]').content = token('--bg');
+  }
+  function setTheme(dark) {
+    if (dark) root.setAttribute('data-theme', 'dark'); else root.removeAttribute('data-theme');
+    syncTheme();
+    window.dispatchEvent(new Event('themechange'));
+  }
+  themeBtn.addEventListener('click', function () {
+    var dark = root.getAttribute('data-theme') !== 'dark';
+    try { localStorage.setItem('merida2027.theme', dark ? 'dark' : 'light'); } catch (e) {}
+    if (document.startViewTransition && !still) document.startViewTransition(function () { setTheme(dark); });
+    else setTheme(dark);
+  });
+  // Si lo cambias en otra pestaña, esta se pone igual.
+  window.addEventListener('storage', function (e) { if (e.key === 'merida2027.theme') setTheme(e.newValue === 'dark'); });
+  syncTheme();
+
   // Cuenta regresiva al rompehielos (hora de Mérida, UTC-6)
   var target = new Date('2027-02-25T17:00:00-06:00').getTime();
   function tick() {
@@ -103,12 +127,17 @@
     sx = sun.offsetLeft + sr;
     top = sun.offsetTop + sr * 1.24;
   }
+  // Cuatro capas de olas, de mar adentro a la orilla; el color de cada una lo pone el tema (--sea-1 a --sea-4).
   var layers = [
-    { c: 'rgba(22, 86, 102, .78)', a: 7, l: 340, v: .55, y: 0 },
-    { c: 'rgba(14, 62, 76, .9)', a: 9, l: 250, v: -.8, y: .26 },
-    { c: 'rgba(9, 42, 52, .95)', a: 8, l: 190, v: 1.1, y: .55 },
-    { c: '#06181D', a: 6, l: 150, v: -1.4, y: .84 }
+    { a: 7, l: 340, v: .55, y: 0 },
+    { a: 9, l: 250, v: -.8, y: .26 },
+    { a: 8, l: 190, v: 1.1, y: .55 },
+    { a: 6, l: 150, v: -1.4, y: .84 }
   ];
+  var glint;  // de día el reflejo del sol es claro; al atardecer, naranja
+  function tint() { layers.forEach(function (L, i) { L.c = token('--sea-' + (i + 1)); }); glint = token('--glint'); }
+  tint();
+  window.addEventListener('themechange', function () { tint(); draw(performance.now()); });
   function draw(ms) {
     var t = ms / 1000, depth = H - top;
     cx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -125,7 +154,7 @@
         for (var k = 0; k < 9; k++) {
           var w = sr * 1.5 * (1 - k / 11) * (.62 + .38 * Math.sin(t * 1.3 + k * 1.9));
           var yy = y0 + 14 + k * (depth * .8 / 9);
-          cx.fillStyle = 'rgba(255, ' + (150 - k * 7) + ', ' + (95 + k * 6) + ', ' + (.55 - k * .05) + ')';
+          cx.fillStyle = 'rgba(' + (glint || '255, ' + (150 - k * 7) + ', ' + (95 + k * 6)) + ', ' + (.55 - k * .05) + ')';
           cx.fillRect(sx - w / 2 + Math.sin(t + k) * 6, yy, w, 3);
         }
       }

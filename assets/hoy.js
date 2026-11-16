@@ -68,7 +68,7 @@
       '<div class="hoy-grid"><div class="hoy-box hot">' + nextHtml + '</div><div class="hoy-box">' + stayHtml + '</div></div>' +
       (author ? '<a class="hoy-post" href="#avisos"><b>Último aviso · ' + esc(author.name) + '</b><span>' + esc(post.body) + '</span></a>' : '') +
       // La agenda del día se toma tal cual del itinerario de la página.
-      '<ul class="ev" style="--c: var(--sun)">' + src.querySelector('.ev').innerHTML + '</ul>' +
+      '<ul class="ev c-sun">' + src.querySelector('.ev').innerHTML + '</ul>' +
       '<a class="btn" href="#' + day.id + '">Ver la semana completa</a>';
   }
 
