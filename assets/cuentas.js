@@ -122,11 +122,13 @@
   var linked = null, focused = false;
   try { linked = new URLSearchParams(location.search).get('cuenta'); } catch (e) {}
   function focusLinked() {
-    if (!linked || focused) return;
+    if (!linked) return;
     var el = document.querySelector('[data-tk="' + linked.replace(/[^\w-]/g, '') + '"]');
     if (!el) return;
-    focused = true; el.classList.add('focus');
-    setTimeout(function () { el.scrollIntoView({ block: 'start' }); }, 300);
+    el.classList.add('focus');  // se vuelve a marcar en cada repintado; el salto solo ocurre una vez
+    if (focused) return;
+    focused = true;
+    setTimeout(function () { var now = document.querySelector('.tk.focus'); if (now) now.scrollIntoView({ block: 'start' }); }, 400);
   }
   if (linked) setTimeout(function () { if (!T.me) T.openJoin(); }, 2500);
 
