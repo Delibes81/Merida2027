@@ -30,7 +30,7 @@ Extrae cada renglón consumido con su importe total en pesos.
 
 - Un renglón por producto. Si un producto trae cantidad mayor a 1, deja un solo renglón con el importe ya multiplicado y la cantidad al inicio del nombre.
 - No incluyas como renglones el subtotal, el IVA, el total, la propina, el cambio ni las formas de pago.
-- Los precios en México ya incluyen IVA. Si el ticket lo desglosa aparte y los renglones vienen sin IVA, reparte el IVA proporcionalmente para que la suma de los renglones más la propina dé el total.
+- Los precios en México ya incluyen IVA. Si el ticket lo desglosa aparte y los renglones vienen sin IVA, reparte el IVA proporcionalmente para que la suma de los renglones dé el total sin propina.
 - Los descuentos van como parte del renglón al que aplican; si aplican a toda la cuenta, repártelos proporcionalmente.
 - Si la imagen no es un ticket o no se alcanza a leer, responde legible en false y deja la lista vacía. No inventes renglones.`;
 

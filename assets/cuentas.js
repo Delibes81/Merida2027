@@ -11,8 +11,7 @@
   var find = function (id) { return T.S.tickets.filter(function (x) { return x.id === id; })[0]; };
   var names = function (ids) { return ids.map(function (id) { return T.byId[id].name; }).join(', '); };
 
-  // Cuánto le toca a cada quien, en centavos. Un renglón se reparte parejo entre quienes
-  // lo marcaron; la propina, en proporción a lo que consumió cada uno.
+  // Cuánto le toca a cada quien, en centavos. Un renglón se reparte parejo entre quienes lo marcaron.
   function compute(t) {
     var items = T.S.items.filter(function (i) { return i.ticket_id === t.id; });
     var sub = {}, unassigned = 0, itemsTotal = 0;
@@ -23,16 +22,8 @@
       var share = Math.floor(c / who.length), extra = c - share * who.length;
       who.forEach(function (m, n) { sub[m.id] = (sub[m.id] || 0) + share + (n < extra ? 1 : 0); });
     });
-    var tip = cents(t.tip || 0), assigned = itemsTotal - unassigned, total = {}, given = 0;
-    var ids = M.map(function (m) { return m.id; }).filter(function (id) { return sub[id]; });
-    var rest = [];
-    ids.forEach(function (id) {
-      var exact = assigned ? tip * sub[id] / assigned : 0, part = Math.floor(exact);
-      total[id] = sub[id] + part; given += part; rest.push([id, exact - part]);
-    });
-    // Los centavos sobrantes de la propina van a quienes quedaron más cerca del siguiente centavo.
-    rest.sort(function (x, y) { return y[1] - x[1]; });
-    for (var n = 0; n < tip - given && rest.length; n++) total[rest[n % rest.length][0]] += 1;
+    // La propina no entra en la cuenta: cada quien deja la suya aparte.
+    var total = sub, ids = M.map(function (m) { return m.id; }).filter(function (id) { return sub[id]; });
 
     // Pagos avisados: cuánto dijo cada quien que pagó, contra lo que le toca ahora.
     var paid = {}, paidTotal = 0, owing = [], owed = 0, over = 0;
@@ -42,7 +33,7 @@
       if (d > 0) { owed += d; owing.push(m.id); } else over -= d;
     });
     var people = M.map(function (m) { return m.id; }).filter(function (id) { return total[id] || paid[id]; });
-    return { items: items, total: total, ids: ids, people: people, unassigned: unassigned, itemsTotal: itemsTotal, tip: tip, grand: itemsTotal + tip,
+    return { items: items, total: total, ids: ids, people: people, unassigned: unassigned, itemsTotal: itemsTotal, grand: itemsTotal,
       paid: paid, paidTotal: paidTotal, owing: owing, owed: owed, over: over, complete: items.length > 0 && !unassigned && !owed && !over };
   }
 
@@ -77,15 +68,15 @@
     if (!T.me) { $('tickets').innerHTML = ''; return; }
     var open = all('#tickets details[open]').map(function (d) { return d.closest('[data-tk]').getAttribute('data-tk'); });
     // La cuenta se repinta cada vez que alguien marca algo: se conserva lo que cada quien
-    // tenga a medio escribir (renglón, texto pegado, propina) y dónde tenía el cursor.
-    var FIELDS = ['.tk-add input[name=name]', '.tk-add input[name=amount]', '.tk-paste textarea', '[data-tk-tip]'];
+    // tenga a medio escribir (renglón o texto pegado) y dónde tenía el cursor.
+    var FIELDS = ['.tk-add input[name=name]', '.tk-add input[name=amount]', '.tk-paste textarea'];
     var active = document.activeElement, drafts = [];
     all('#tickets [data-tk]').forEach(function (art) {
-      FIELDS.forEach(function (sel, n) {
+      FIELDS.forEach(function (sel) {
         var el = art.querySelector(sel);
         if (!el) return;
         var focus = el === active;
-        if (n === 3 ? focus : (el.value || focus)) drafts.push({ tk: art.getAttribute('data-tk'), sel: sel, value: el.value, focus: focus });
+        if (el.value || focus) drafts.push({ tk: art.getAttribute('data-tk'), sel: sel, value: el.value, focus: focus });
       });
     });
     $('tickets').innerHTML = T.S.tickets.length ? T.S.tickets.map(function (t) {
@@ -113,11 +104,10 @@
         '<form class="tk-add" data-tk-add="' + esc(t.id) + '"><input name="name" type="text" maxlength="80" placeholder="Renglón" aria-label="Nombre del renglón" required>' +
         '<input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="$" aria-label="Importe" required><button class="btn" type="submit">Agregar</button></form>' +
         '<details class="tk-paste"><summary>Pegar varios renglones</summary>' +
-        '<p>Un renglón por línea, con el importe al final. Si quieres, agrega quién lo pidió con @: <b>Nachos 220 @Jorge, Zamy</b> o <b>@todos</b>. Sirve para pegar lo que lea de la foto tu lector de tickets o cualquier asistente.</p>' +
+        '<p>Un renglón por línea, con el importe al final. Si quieres, agrega quién lo pidió con @: <b>Nachos 220 @Jorge, Zamy</b> o <b>@todos</b>. La propina no se incluye: cada quien deja la suya. Sirve para pegar lo que lea de la foto tu lector de tickets o cualquier asistente.</p>' +
         '<p class="tk-ask" data-ask>' + ASK + '</p><button class="btn" type="button" data-copy-ask>Copiar instrucción</button>' +
-        '<textarea rows="5" placeholder="Cochinita 180 @Jorge&#10;2 Cerveza 100&#10;Nachos 220 @todos&#10;Propina 40" aria-label="Renglones para pegar"></textarea>' +
+        '<textarea rows="5" placeholder="Cochinita 180 @Jorge&#10;2 Cerveza 100&#10;Nachos 220 @todos" aria-label="Renglones para pegar"></textarea>' +
         '<button class="btn" type="button" data-tk-paste="' + esc(t.id) + '">Agregar renglones</button></details>' +
-        '<label class="tk-tip">Propina<input type="number" inputmode="decimal" min="0" step="0.01" value="' + (Number(t.tip) || '') + '" placeholder="0" data-tk-tip="' + esc(t.id) + '"></label>' +
         peopleHtml(t, c) +
         '<label class="tk-tip tk-mode">Cómo se paga<select data-tk-payer="' + esc(t.id) + '"><option value="">Cada quien paga lo suyo</option>' +
           M.map(function (m) { return '<option value="' + m.id + '"' + (t.paid_by === m.id ? ' selected' : '') + '>Pagó ' + esc(m.name) + ' y se le repone</option>'; }).join('') + '</select></label>' +
@@ -150,9 +140,9 @@
   }
   if (linked) setTimeout(function () { if (!T.me) T.openJoin(); }, 2500);
 
-  // Convierte texto pegado en renglones: "Cochinita 180", "2 Cerveza $100.00", "Propina 40".
+  // Convierte texto pegado en renglones: "Cochinita 180", "2 Cerveza $100.00". Las líneas de propina se descartan.
   // Opcional, quién lo pidió: "Nachos 220 @Jorge, Zamy" o "@todos". Formato completo en docs/agente-tickets.md.
-  var ASK = 'Lee este ticket y dame un renglón por línea con el formato: nombre importe. Sin subtotal, IVA ni total. Si hay propina, ponla en una línea que diga Propina. Si te digo quién pidió algo, agrégalo al final con @ y los nombres.';
+  var ASK = 'Lee este ticket y dame un renglón por línea con el formato: nombre importe. Sin subtotal, IVA, total ni propina. Si te digo quién pidió algo, agrégalo al final con @ y los nombres.';
   var plain = function (x) { return String(x).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); };
   function parseLines(text) {
     var items = [], tip = null, unknown = [];
@@ -175,7 +165,7 @@
       var name = m[1].replace(/[\s:.\-|$]+$/, '').trim(), amount = Number(m[2].replace(/,/g, ''));
       if (!name || !(amount > 0)) return;
       if (/^(sub\s?total|total|i\.?v\.?a\.?|cambio|efectivo|tarjeta|importe|su pago|pago)\b/i.test(name)) return;
-      if (/^(propina|servicio)\b/i.test(name)) { tip = amount; return; }
+      if (/^(propina|servicio)\b/i.test(name)) { tip = amount; return; }  // se avisa, pero no se suma
       items.push({ name: name.slice(0, 80), amount: Math.round(amount * 100) / 100, who: who });
     });
     return { items: items, tip: tip, unknown: unknown };
@@ -287,18 +277,17 @@
     }
     if ((b = t.closest('[data-tk-paste]'))) {
       var pid = b.getAttribute('data-tk-paste'), box = b.parentNode.querySelector('textarea'), got = parseLines(box.value);
-      if (!got.items.length && got.tip == null) return T.toast('No encontré renglones: cada línea debe terminar con su importe.');
+      if (!got.items.length) return T.toast('No encontré renglones: cada línea debe terminar con su importe.');
       var base = T.S.items.filter(function (i) { return i.ticket_id === pid; }).length;
       var newRows = got.items.map(function (i, n) { return { id: uuid(), ticket_id: pid, name: i.name, amount: i.amount, sort: base + n }; });
       var newClaims = [];
       got.items.forEach(function (i, n) { i.who.forEach(function (mid) { newClaims.push({ item_id: newRows[n].id, member_id: mid }); }); });
-      T.S.items = T.S.items.concat(newRows); T.S.claims = T.S.claims.concat(newClaims); if (got.tip != null) find(pid).tip = got.tip;
+      T.S.items = T.S.items.concat(newRows); T.S.claims = T.S.claims.concat(newClaims);
       box.value = ''; paint();
-      var res = newRows.length ? await T.sb.from('ticket_items').insert(newRows) : { error: null };
+      var res = await T.sb.from('ticket_items').insert(newRows);
       if (!res.error && newClaims.length) res = await T.sb.from('ticket_claims').insert(newClaims);
-      if (!res.error && got.tip != null) res = await T.sb.from('tickets').update({ tip: got.tip }).eq('id', pid);
       if (res.error) return failed();
-      T.toast('Agregué ' + newRows.length + (newRows.length === 1 ? ' renglón' : ' renglones') + (got.tip != null ? ' y la propina.' : '.') +
+      T.toast('Agregué ' + newRows.length + (newRows.length === 1 ? ' renglón.' : ' renglones.') + (got.tip != null ? ' La propina no se suma: cada quien deja la suya.' : '') +
         (newClaims.length ? ' Ya vienen marcados los que traían nombre.' : '') + (got.unknown.length ? ' No reconocí a: ' + got.unknown.join(', ') + '.' : ''));
     }
   });
@@ -318,18 +307,13 @@
     if ((await T.sb.from('ticket_items').insert(row)).error) failed();
   });
 
-  // Propina y forma de pago.
+  // Forma de pago.
   document.addEventListener('change', async function (e) {
-    var i = e.target.closest('[data-tk-tip]'), s = e.target.closest('[data-tk-payer]'), t;
-    if (i) {
-      t = find(i.getAttribute('data-tk-tip'));
-      t.tip = Math.max(0, Math.round(Number(i.value) * 100) / 100) || 0; paint();
-      if ((await T.sb.from('tickets').update({ tip: t.tip }).eq('id', t.id)).error) failed();
-    } else if (s) {
-      t = find(s.getAttribute('data-tk-payer'));
-      t.paid_by = s.value || null; paint();
-      if ((await T.sb.from('tickets').update({ paid_by: t.paid_by }).eq('id', t.id)).error) failed();
-    }
+    var s = e.target.closest('[data-tk-payer]');
+    if (!s) return;
+    var t = find(s.getAttribute('data-tk-payer'));
+    t.paid_by = s.value || null; paint();
+    if ((await T.sb.from('tickets').update({ paid_by: t.paid_by }).eq('id', t.id)).error) failed();
   });
 
   // Si alguien pagó todo: crea un gasto con el monto exacto de cada quien y liga la cuenta a él.
@@ -389,7 +373,7 @@
           : 'No se pudo leer la foto; captura o pega los renglones.';
       }
     }
-    var t = { id: uuid(), title: $('tkTitle').value.trim(), paid_by: $('tkPaid').value || null, tip: read ? read.tip : 0, created_by: T.me.id };
+    var t = { id: uuid(), title: $('tkTitle').value.trim(), paid_by: $('tkPaid').value || null, created_by: T.me.id };
     var r = await T.sb.from('tickets').insert(t);
     if (!r.error && read) {
       r = await T.sb.from('ticket_items').insert(read.items.map(function (i, n) {
@@ -400,9 +384,9 @@
     if (r.error) return T.fail($('tkErr'), 'No se pudo crear la cuenta. Intenta de nuevo.');
     T.close($('dlgTk')); await reload();
     if (read) {
-      var sum = read.items.reduce(function (a, i) { return a + cents(i.amount); }, 0) + cents(read.tip);
-      note = read.total && Math.abs(sum - cents(read.total)) > 100
-        ? 'Leí ' + read.items.length + ' renglones, pero suman ' + money(sum) + ' y el ticket dice ' + money(cents(read.total)) + '. Revísalos.'
+      var sum = read.items.reduce(function (a, i) { return a + cents(i.amount); }, 0), printed = cents(read.total) - cents(read.tip || 0);
+      note = read.total && Math.abs(sum - printed) > 100
+        ? 'Leí ' + read.items.length + ' renglones, pero suman ' + money(sum) + ' y el ticket dice ' + money(printed) + ' sin propina. Revísalos.'
         : 'Leí ' + read.items.length + ' renglones. Revísalos y marquen lo suyo.';
     }
     T.toast(note || 'Cuenta creada. Agrega los renglones y compártela con el grupo.');
