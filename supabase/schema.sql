@@ -53,6 +53,21 @@ create table if not exists public.flights (
   updated_at timestamptz not null default now()
 );
 
+-- Datos de cada hospedaje (anuncio, dirección, horarios, costo).
+create table if not exists public.stays (
+  id         text primary key check (id in ('hacienda', 'chuburna', 'merida')),
+  name       text check (char_length(name) <= 80),
+  url        text check (url is null or (char_length(url) <= 500 and url ~* '^https?://')),
+  address    text check (char_length(address) <= 200),
+  checkin    time,
+  checkout   time,
+  total      numeric(10, 2) check (total is null or total >= 0),
+  booked_by  text references public.members (id),
+  notes      text check (char_length(notes) <= 600),
+  updated_by text references public.members (id),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.expenses (
   id         uuid primary key default gen_random_uuid(),
   concept    text not null check (char_length(concept) between 1 and 80),
@@ -167,15 +182,17 @@ alter table public.todos       enable row level security;
 alter table public.flights     enable row level security;
 alter table public.expenses    enable row level security;
 alter table public.rsvps       enable row level security;
+alter table public.stays       enable row level security;
 
 revoke all on public.members, public.devices, public.trip_secret, public.todos,
-              public.flights, public.expenses, public.rsvps from anon;
+              public.flights, public.expenses, public.rsvps, public.stays from anon;
 revoke all on public.trip_secret from authenticated;
 
 grant select                 on public.members  to authenticated;
 grant select                 on public.devices  to authenticated;
 grant select, insert, update on public.todos    to authenticated;
-grant select, insert, update on public.flights  to authenticated;
+grant select, insert, update, delete on public.flights to authenticated;
+grant select, insert, update on public.stays    to authenticated;
 grant select, insert, delete on public.expenses to authenticated;
 grant select, insert, delete on public.rsvps    to authenticated;
 
@@ -208,6 +225,20 @@ drop policy if exists flights_update on public.flights;
 create policy flights_update on public.flights for update to authenticated
   using (public.my_member() is not null) with check (updated_by = public.my_member());
 
+drop policy if exists flights_delete on public.flights;
+create policy flights_delete on public.flights for delete to authenticated
+  using (public.my_member() is not null);
+
+drop policy if exists stays_read on public.stays;
+create policy stays_read on public.stays for select to authenticated
+  using (public.my_member() is not null);
+drop policy if exists stays_insert on public.stays;
+create policy stays_insert on public.stays for insert to authenticated
+  with check (updated_by = public.my_member());
+drop policy if exists stays_update on public.stays;
+create policy stays_update on public.stays for update to authenticated
+  using (public.my_member() is not null) with check (updated_by = public.my_member());
+
 drop policy if exists expenses_read on public.expenses;
 create policy expenses_read on public.expenses for select to authenticated
   using (public.my_member() is not null);
@@ -233,7 +264,7 @@ create policy rsvps_delete on public.rsvps for delete to authenticated
 do $$
 declare t text;
 begin
-  foreach t in array array['todos', 'flights', 'expenses', 'rsvps'] loop
+  foreach t in array array['todos', 'flights', 'expenses', 'rsvps', 'stays'] loop
     if not exists (
       select 1 from pg_publication_tables
       where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t

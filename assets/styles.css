@@ -22,6 +22,7 @@
   --r: 20px;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; scroll-padding-top: 76px; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--body); -webkit-font-smoothing: antialiased; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
@@ -304,6 +305,41 @@ body.joined .locked { display: none; }
 .bal .neg { color: var(--pink); }
 .pay b { font-weight: 700; }
 @media (max-width: 700px) { .ledger-cols { grid-template-columns: 1fr; } }
+
+/* Tablero de vuelos */
+#flBody { display: flex; flex-direction: column; gap: 14px; }
+.fl-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.fl-bar p { font-size: 13px; color: var(--muted); }
+.boards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.board { padding: 20px; min-width: 0; }
+.board h3 { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; color: var(--c); padding-bottom: 14px; }
+.board h3 svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.board li { display: grid; grid-template-columns: 74px 1fr; gap: 4px 14px; padding: 14px 0; border-top: 1px solid var(--line); align-items: start; }
+.board .b-time { font: 500 24px/1.1 var(--mono); font-variant-numeric: tabular-nums; color: var(--c); }
+.board .b-main { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.board .b-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.board .b-top b { font: 500 16px var(--mono); }
+.board .b-top span { font-size: 13px; color: var(--muted); }
+.board .b-who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+.board .faces .av { box-shadow: 0 0 0 2px var(--card); }
+.board .empty { display: block; }
+@media (max-width: 820px) { .boards { grid-template-columns: 1fr; } }
+
+/* Hospedaje */
+.stays { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+.stay-card { padding: 22px; display: flex; flex-direction: column; gap: 10px; min-width: 0; border-top: 4px solid var(--c); }
+.stay-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; min-height: 36px; }
+.pill { font: 500 12px var(--mono); padding: 4px 10px; border-radius: 99px; background: var(--c); color: var(--ink); }
+.pill.open { background: none; border: 1px dashed var(--muted); color: var(--muted); }
+.stay-card h3 { font-size: 19px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.stay-card p { font-size: 15px; color: var(--muted); overflow-wrap: anywhere; }
+.stay-card .notes { white-space: pre-line; padding: 10px 12px; border-radius: 12px; background: var(--bg); }
+.stay-card dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 10px; }
+.stay-card dt { font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.stay-card dd { font-weight: 700; font-variant-numeric: tabular-nums; }
+.stay-card .btns { margin-top: auto; padding-top: 6px; }
+.fld textarea { width: 100%; min-width: 0; padding: 11px 12px; font: 500 15px/1.5 var(--body); letter-spacing: 0; text-transform: none; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; resize: vertical; }
+.btn.danger { color: var(--pink); margin-right: auto; }
 
 /* Diálogos */
 .dlg { border: 1px solid var(--line); border-radius: 24px; background: var(--bg-2); color: var(--fg); padding: 0; width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }

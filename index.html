@@ -26,6 +26,8 @@
       <a href="#semana">Semana</a>
       <a href="#boda">Boda</a>
       <a href="#ruta">Ruta</a>
+      <a href="#vuelos">Vuelos</a>
+      <a href="#hospedaje">Hospedaje</a>
       <a href="#lugares">Lugares</a>
       <a href="#pendientes">Pendientes</a>
       <a href="#costos">Costos</a>
@@ -239,6 +241,38 @@
     </div>
   </section>
 
+  <section class="sec" id="vuelos">
+    <div class="sec-head">
+      <p class="eyebrow">Quién llega y a qué hora</p>
+      <h2>Vuelos</h2>
+      <p>Cada quien registra su vuelo y aquí se ve el tablero de todos, para coordinar las llegadas y la camioneta.</p>
+    </div>
+    <div class="locked">Entra con el código del grupo para ver los vuelos y registrar el tuyo. <button class="btn" type="button" data-join>Entrar</button></div>
+    <div id="flBody" hidden>
+      <div class="fl-bar"><p class="mono" id="flCount"></p><button class="btn hot" id="flMine" type="button">Registrar vuelo</button></div>
+      <div class="boards">
+        <div class="card board rise" style="--c: var(--aqua)">
+          <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 13l14 4M5 13V8l2 .5 2 4M11 14.500V5l2 .5 3 10.500"/></svg>Llegadas a Mérida</h3>
+          <ul id="flArr"></ul>
+        </div>
+        <div class="card board rise" style="--c: var(--sun)">
+          <h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M4 15l15-5.500M4 15l-1-5 2-.5 3 3M10 12.800 7 5l2-.700 7 6"/></svg>Salidas de Mérida</h3>
+          <ul id="flDep"></ul>
+        </div>
+      </div>
+      <p class="fine" id="flMissing"></p>
+    </div>
+  </section>
+
+  <section class="sec" id="hospedaje">
+    <div class="sec-head">
+      <p class="eyebrow">Dónde dormimos cada noche</p>
+      <h2>Hospedaje</h2>
+      <p>Cuando se reserve cada lugar, aquí quedan el anuncio, la dirección, los horarios y el costo para que todos los consulten.</p>
+    </div>
+    <div class="stays" id="stays"></div>
+  </section>
+
   <section class="sec" id="lugares">
     <div class="sec-head">
       <p class="eyebrow">Sábado a lunes, por nuestra cuenta</p>
@@ -409,8 +443,9 @@
       <label class="fld" for="flDepTime">Hora<input id="flDepTime" type="time"></label>
       <label class="fld" for="flDepNo">Vuelo<input id="flDepNo" type="text" maxlength="20" placeholder="AM 826" autocomplete="off"></label>
     </div></fieldset>
+    <fieldset id="flAlsoBox" hidden><legend>Mismo vuelo para</legend><div class="who" id="flAlso"></div></fieldset>
     <p class="err" id="flErr" hidden></p>
-    <div class="dlg-actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit">Guardar vuelo</button></div>
+    <div class="dlg-actions"><button class="btn danger" type="button" id="flDel" hidden>Borrar vuelo</button><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit">Guardar vuelo</button></div>
   </form>
 </dialog>
 
@@ -425,6 +460,26 @@
     <fieldset><legend>Se divide entre</legend><div class="presets" id="exPresets"></div><div class="who" id="exSplit"></div></fieldset>
     <p class="err" id="exErr" hidden></p>
     <div class="dlg-actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit">Guardar gasto</button></div>
+  </form>
+</dialog>
+
+<dialog class="dlg" id="dlgStay" aria-labelledby="stT">
+  <form id="stForm">
+    <h3 id="stT">Hospedaje</h3>
+    <label class="fld" for="stName">Nombre del lugar<input id="stName" type="text" maxlength="80" autocomplete="off"></label>
+    <label class="fld" for="stUrl">Enlace del anuncio o la reserva<input id="stUrl" type="url" maxlength="500" placeholder="https://…" autocomplete="off"></label>
+    <label class="fld" for="stAddr">Dirección<input id="stAddr" type="text" maxlength="200" autocomplete="off"></label>
+    <div class="row">
+      <label class="fld" for="stIn">Check-in<input id="stIn" type="time"></label>
+      <label class="fld" for="stOut">Check-out<input id="stOut" type="time"></label>
+    </div>
+    <div class="row">
+      <label class="fld" for="stTotal">Costo total (MXN)<input id="stTotal" type="number" inputmode="decimal" min="0" step="0.01"></label>
+      <label class="fld" for="stBy">Reservó<select id="stBy"></select></label>
+    </div>
+    <label class="fld" for="stNotes">Notas<textarea id="stNotes" maxlength="600" rows="3" placeholder="Wi-Fi, cómo entrar, estacionamiento…"></textarea></label>
+    <p class="err" id="stErr" hidden></p>
+    <div class="dlg-actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit">Guardar</button></div>
   </form>
 </dialog>
 

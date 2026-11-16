@@ -9,7 +9,7 @@ Sitio del grupo para el viaje a la boda de Clau y Diego en Yucatán (25 feb – 
 | `index.html` | La página |
 | `assets/styles.css` | Estilos |
 | `assets/app.js` | Portada animada, cuenta regresiva, mapa y calculadora |
-| `assets/grupo.js` | Funciones compartidas: acceso, pendientes en vivo, "me apunto", vuelos y gastos |
+| `assets/grupo.js` | Funciones compartidas: acceso, pendientes en vivo, "me apunto", tablero de vuelos, hospedaje y gastos |
 | `assets/config.js` | URL y clave pública de Supabase |
 | `supabase/schema.sql` | Tablas, permisos y tiempo real |
 
@@ -26,6 +26,8 @@ No hay dependencias que instalar ni paso de build.
 
 3. **Acceso anónimo**: en *Authentication → Sign In / Providers* activa *Anonymous sign-ins*.
 4. **Clave pública**: en *Project Settings → API Keys* copia la clave *publishable* (o *anon*) y pégala en `supabaseKey` dentro de `assets/config.js`.
+
+Cuando `schema.sql` cambie, vuelve a correrlo completo: está hecho para ejecutarse varias veces sin borrar datos ni el código del grupo.
 
 La clave pública puede vivir en el repositorio: los datos los protegen las reglas de `schema.sql`. La clave *secret* / *service_role* nunca va en este proyecto.
 

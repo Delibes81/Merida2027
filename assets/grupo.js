@@ -56,7 +56,7 @@
   var TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg>';
 
   var sb = null, me = null, chan = null;
-  var S = { todos: {}, flights: {}, expenses: [], rsvps: [] };
+  var S = { todos: {}, flights: {}, expenses: [], rsvps: [], stays: {} };
   var ready = !!(cfg.supabaseUrl && cfg.supabaseKey && window.supabase && window.supabase.createClient);
 
   // ── Avisos y diálogos ──
@@ -81,6 +81,10 @@
     if (f) return openFlight(f.getAttribute('data-flight'));
     var x = t.closest('[data-del]');
     if (x) return delExpense(x.getAttribute('data-del'));
+    var st = t.closest('[data-stay]');
+    if (st) return openStay(st.getAttribute('data-stay'));
+    var sx = t.closest('[data-stay-ex]');
+    if (sx) return stayToExpense(sx.getAttribute('data-stay-ex'));
   });
 
   // ── Acceso ──
@@ -131,7 +135,7 @@
   $('leaveBtn').addEventListener('click', async function () {
     await sb.rpc('leave_trip');
     if (chan) { sb.removeChannel(chan); chan = null; }
-    me = null; S = { todos: {}, flights: {}, expenses: [], rsvps: [] };
+    me = null; S = { todos: {}, flights: {}, expenses: [], rsvps: [], stays: {} };
     close($('dlgMe')); paintAll();
     toast('Saliste del grupo en este dispositivo.');
   });
@@ -158,12 +162,18 @@
     flights: async function () {
       var r = await sb.from('flights').select('*');
       if (r.error) return;
-      S.flights = {}; r.data.forEach(function (f) { S.flights[f.member_id] = f; }); paintCrew();
+      S.flights = {}; r.data.forEach(function (f) { S.flights[f.member_id] = f; }); paintCrew(); paintFlights();
     },
     expenses: async function () {
       var r = await sb.from('expenses').select('*').order('created_at', { ascending: false });
       if (r.error) return;
       S.expenses = r.data; paintExpenses();
+    },
+    stays: async function () {
+      var r = await sb.from('stays').select('*');
+      staysReady = !r.error;
+      if (r.error) return;
+      S.stays = {}; r.data.forEach(function (x) { S.stays[x.id] = x; }); paintStays();
     },
     rsvps: async function () {
       var r = await sb.from('rsvps').select('*');
@@ -177,7 +187,7 @@
     var b = $('meBtn');
     b.classList.toggle('in', !!me);
     b.innerHTML = me ? av(me) + esc(me.name) : 'Entrar';
-    paintTodos(); paintActs(); paintCrew(); paintExpenses();
+    paintTodos(); paintActs(); paintCrew(); paintFlights(); paintStays(); paintExpenses();
   }
 
   // ── Pendientes ──
@@ -285,25 +295,158 @@
     $('flDepTime').value = f.dep_time ? String(f.dep_time).slice(0, 5) : '';
     $('flDepNo').value = f.dep_flight || '';
   }
+  // Al registrar un vuelo se puede aplicar a la familia o pareja de una vez.
+  function fillAlso(id) {
+    var mates = MEMBERS.filter(function (m) { return m.hh === byId[id].hh && m.id !== id; });
+    $('flAlsoBox').hidden = !mates.length;
+    $('flAlso').innerHTML = mates.map(function (m) {
+      return '<label><input type="checkbox" name="also" value="' + m.id + '" checked><span>' + av(m) + esc(m.name) + '</span></label>';
+    }).join('');
+    $('flDel').hidden = !S.flights[id];
+  }
   function openFlight(id) {
-    $('flWho').value = id; fillFlight(id); fail($('flErr'), '');
+    $('flWho').value = id; fillFlight(id); fillAlso(id); fail($('flErr'), '');
     open($('dlgFlight'));
   }
-  $('flWho').addEventListener('change', function () { fillFlight(this.value); });
+  $('flWho').addEventListener('change', function () { fillFlight(this.value); fillAlso(this.value); });
+  $('flMine').addEventListener('click', function () { openFlight(me.id); });
   $('flForm').addEventListener('submit', async function (e) {
     e.preventDefault(); busy(this, true);
-    var row = {
-      member_id: $('flWho').value,
-      arr_date: $('flArrDate').value || null, arr_time: $('flArrTime').value || null, arr_flight: $('flArrNo').value.trim() || null,
-      dep_date: $('flDepDate').value || null, dep_time: $('flDepTime').value || null, dep_flight: $('flDepNo').value.trim() || null,
-      updated_by: me.id, updated_at: new Date().toISOString()
-    };
-    var r = await sb.from('flights').upsert(row);
+    var who = [$('flWho').value].concat(all('input[name=also]:checked', this).map(function (i) { return i.value; }));
+    var rows = who.map(function (id) {
+      return {
+        member_id: id,
+        arr_date: $('flArrDate').value || null, arr_time: $('flArrTime').value || null, arr_flight: $('flArrNo').value.trim().toUpperCase() || null,
+        dep_date: $('flDepDate').value || null, dep_time: $('flDepTime').value || null, dep_flight: $('flDepNo').value.trim().toUpperCase() || null,
+        updated_by: me.id, updated_at: new Date().toISOString()
+      };
+    });
+    var r = await sb.from('flights').upsert(rows);
     busy(this, false);
     if (r.error) return fail($('flErr'), 'No se pudo guardar el vuelo. Intenta de nuevo.');
-    S.flights[row.member_id] = row; paintCrew();
-    close($('dlgFlight')); toast('Vuelo de ' + byId[row.member_id].name + ' guardado.');
+    rows.forEach(function (row) { S.flights[row.member_id] = row; });
+    paintCrew(); paintFlights();
+    close($('dlgFlight'));
+    toast(rows.length > 1 ? 'Vuelo guardado para ' + rows.length + ' personas.' : 'Vuelo de ' + byId[who[0]].name + ' guardado.');
   });
+  $('flDel').addEventListener('click', async function () {
+    var id = $('flWho').value, before = S.flights[id];
+    delete S.flights[id]; paintCrew(); paintFlights(); close($('dlgFlight'));
+    var r = await sb.from('flights').delete().eq('member_id', id);
+    if (r.error) { S.flights[id] = before; paintCrew(); paintFlights(); toast('No se pudo borrar. Intenta de nuevo.'); }
+    else toast('Vuelo de ' + byId[id].name + ' borrado.');
+  });
+
+  // Tablero: quienes comparten vuelo salen en el mismo renglón, en orden de hora.
+  function board(kind) {
+    var groups = {};
+    MEMBERS.forEach(function (m) {
+      var f = S.flights[m.id];
+      if (!f) return;
+      var time = f[kind + '_time'] ? String(f[kind + '_time']).slice(0, 5) : '', no = f[kind + '_flight'] || '';
+      if (!time && !no) return;
+      var date = f[kind + '_date'] || (kind === 'arr' ? m.arr || ARRIVAL : m.to || RETURN);
+      var key = date + '|' + (time || '99:99') + '|' + no;
+      (groups[key] = groups[key] || { date: date, time: time, no: no, who: [] }).who.push(m);
+    });
+    var keys = Object.keys(groups).sort();
+    if (!keys.length) return '<li class="empty">' + (kind === 'arr' ? 'Todavía nadie registra su llegada.' : 'Todavía nadie registra su salida.') + '</li>';
+    return keys.map(function (k) {
+      var g = groups[k];
+      return '<li><time class="b-time">' + (g.time || '--:--') + '</time><div class="b-main">' +
+        '<div class="b-top"><b>' + esc(g.no || 'Vuelo por definir') + '</b><span>' + fmtDate(g.date) + '</span></div>' +
+        '<div class="b-who"><span class="faces">' + g.who.map(av).join('') + '</span>' + esc(g.who.map(function (m) { return m.name; }).join(', ')) + '</div>' +
+        '</div></li>';
+    }).join('');
+  }
+  function paintFlights() {
+    $('flBody').hidden = !me;
+    if (!me) return;
+    $('flArr').innerHTML = board('arr'); $('flDep').innerHTML = board('dep');
+    var has = function (m) { var f = S.flights[m.id]; return f && (f.arr_time || f.arr_flight); };
+    var missing = MEMBERS.filter(function (m) { return !has(m); }).map(function (m) { return m.name; });
+    $('flCount').textContent = (MEMBERS.length - missing.length) + ' de ' + MEMBERS.length + ' con llegada registrada';
+    $('flMissing').textContent = missing.length ? 'Faltan por registrar su llegada: ' + missing.join(', ') + '.' : 'Ya están todas las llegadas.';
+    $('flMine').textContent = S.flights[me.id] ? 'Editar mi vuelo' : 'Registrar mi vuelo';
+  }
+
+  // ── Hospedaje ──
+  var STAYS = [
+    { id: 'hacienda', name: 'Hacienda Sotuta de Peón', place: 'Tecoh, Yucatán', from: '2027-02-25', to: '2027-02-27', nights: 2, c: 'pink',
+      note: 'Cada quien reserva su cabaña directo con la hacienda, con el código de la invitación, antes del 26 de enero.' },
+    { id: 'chuburna', name: 'Airbnb en Chuburná', place: 'Chuburná Puerto, Yucatán', from: '2027-02-27', to: '2027-03-01', nights: 2, c: 'aqua' },
+    { id: 'merida', name: 'Airbnb en Mérida', place: 'Mérida, Yucatán', from: '2027-03-01', to: '2027-03-02', nights: 1, c: 'sun' }
+  ];
+  var stayById = {}, staysReady = true;
+  STAYS.forEach(function (x) { stayById[x.id] = x; });
+  var safeUrl = function (u) { return /^https?:\/\//i.test(u || '') ? u : ''; };
+  function paintStays() {
+    $('stays').innerHTML = STAYS.map(function (b) {
+      var d = (me && S.stays[b.id]) || {}, by = byId[d.booked_by], url = safeUrl(d.url);
+      var facts = '';
+      if (d.checkin) facts += '<div><dt>Check-in</dt><dd>' + String(d.checkin).slice(0, 5) + '</dd></div>';
+      if (d.checkout) facts += '<div><dt>Check-out</dt><dd>' + String(d.checkout).slice(0, 5) + '</dd></div>';
+      if (d.total != null && d.total !== '') facts += '<div><dt>Total</dt><dd>' + money(Math.round(Number(d.total) * 100)) + '</dd></div>';
+      var maps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(d.address || (b.id === 'hacienda' ? b.name + ' ' + b.place : b.place));
+      return '<article class="card stay-card rise" style="--c: var(--' + b.c + ')">' +
+        '<div class="stay-top">' +
+          (me ? (by ? '<span class="pill">Reservó ' + esc(by.name) + '</span>' : '<span class="pill open">' + (b.id === 'hacienda' ? 'Cada quien reserva' : 'Por reservar') + '</span>') : '<span></span>') +
+          (me ? '<button class="icon-btn" type="button" data-stay="' + b.id + '" aria-label="Editar ' + esc(b.name) + '">' + PENCIL + '</button>' : '') +
+        '</div>' +
+        '<p class="eyebrow">' + fmtDate(b.from) + ' → ' + fmtDate(b.to) + ' · ' + b.nights + (b.nights === 1 ? ' noche' : ' noches') + '</p>' +
+        '<h3>' + esc(d.name || b.name) + '</h3>' +
+        '<p>' + esc(d.address || b.place) + '</p>' +
+        (b.note ? '<p>' + esc(b.note) + '</p>' : '') +
+        (facts ? '<dl>' + facts + '</dl>' : '') +
+        (d.notes ? '<p class="notes">' + esc(d.notes) + '</p>' : '') +
+        '<div class="btns">' +
+          (url ? '<a class="btn hot" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Ver el anuncio</a>' : '') +
+          '<a class="btn" href="' + esc(maps) + '" target="_blank" rel="noopener">Cómo llegar</a>' +
+          (me && by && Number(d.total) > 0 ? '<button class="btn" type="button" data-stay-ex="' + b.id + '">Pasar a gastos</button>' : '') +
+        '</div></article>';
+    }).join('');
+  }
+  $('stBy').innerHTML = '<option value="">Nadie todavía</option>' + MEMBERS.filter(function (m) { return m.adult; })
+    .map(function (m) { return '<option value="' + m.id + '">' + esc(m.name) + '</option>'; }).join('');
+  var stayEditing = null;
+  function openStay(id) {
+    if (!staysReady) return toast('Falta actualizar la base: corre de nuevo supabase/schema.sql.');
+    var b = stayById[id], d = S.stays[id] || {};
+    stayEditing = id;
+    $('stT').textContent = b.name;
+    $('stName').value = d.name || ''; $('stName').placeholder = b.name;
+    $('stUrl').value = d.url || ''; $('stAddr').value = d.address || '';
+    $('stIn').value = d.checkin ? String(d.checkin).slice(0, 5) : '';
+    $('stOut').value = d.checkout ? String(d.checkout).slice(0, 5) : '';
+    $('stTotal').value = d.total != null ? d.total : '';
+    $('stBy').value = d.booked_by || ''; $('stNotes').value = d.notes || '';
+    fail($('stErr'), ''); open($('dlgStay'));
+  }
+  $('stForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var url = $('stUrl').value.trim();
+    if (url && !safeUrl(url)) return fail($('stErr'), 'El enlace debe empezar con https://');
+    busy(this, true);
+    var row = {
+      id: stayEditing, name: $('stName').value.trim() || null, url: url || null, address: $('stAddr').value.trim() || null,
+      checkin: $('stIn').value || null, checkout: $('stOut').value || null,
+      total: $('stTotal').value === '' ? null : Math.round(Number($('stTotal').value) * 100) / 100,
+      booked_by: $('stBy').value || null, notes: $('stNotes').value.trim() || null,
+      updated_by: me.id, updated_at: new Date().toISOString()
+    };
+    var r = await sb.from('stays').upsert(row);
+    busy(this, false);
+    if (r.error) return fail($('stErr'), 'No se pudo guardar. Intenta de nuevo.');
+    S.stays[row.id] = row; paintStays();
+    close($('dlgStay')); toast('Hospedaje guardado.');
+  });
+  // Lleva el costo del hospedaje al registro de gastos, listo para dividir.
+  function stayToExpense(id) {
+    var b = stayById[id], d = S.stays[id];
+    $('exForm').reset(); fail($('exErr'), '');
+    $('exConcept').value = d.name || b.name; $('exAmount').value = d.total; $('exPaid').value = d.booked_by;
+    open($('dlgEx'));
+  }
 
   // ── Gastos ──
   // El gasto se divide por persona, pero las cuentas se hacen por familia o pareja:
