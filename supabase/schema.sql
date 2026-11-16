@@ -90,6 +90,7 @@ create table if not exists public.rsvps (
 insert into public.members (id, name, adult, household, with_to, sort) values
   ('liliana', 'Liliana', true,  'dl',      '2027-03-02', 1),
   ('delibes', 'Delibes', true,  'dl',      '2027-03-02', 2),
+  ('alex',    'Alex',    false, 'dl',      '2027-03-02', 3),  -- en la base por si vuelve; la página no lo muestra
   ('jorge',   'Jorge',   true,  'jz',      '2027-03-02', 4),
   ('zamy',    'Zamy',    true,  'jz',      '2027-03-02', 5),
   ('chang',   'Chang',   true,  'cs',      '2027-03-02', 6),
@@ -99,27 +100,6 @@ insert into public.members (id, name, adult, household, with_to, sort) values
   ('lore',    'Lore',    true,  'lore',    '2027-03-02', 10)
 on conflict (id) do update set name = excluded.name, adult = excluded.adult,
   household = excluded.household, with_to = excluded.with_to, sort = excluded.sort;
-
--- Alex ya no forma parte de la lista: se quita junto con lo que tuviera registrado.
-do $$
-begin
-  if exists (select 1 from public.members where id = 'alex') then
-    delete from public.flights where member_id = 'alex';
-    delete from public.rsvps   where member_id = 'alex';
-    delete from public.devices where member_id = 'alex';
-    update public.todos    set done_by = null    where done_by = 'alex';
-    update public.flights  set updated_by = null where updated_by = 'alex';
-    update public.stays    set updated_by = null where updated_by = 'alex';
-    update public.stays    set booked_by = null  where booked_by = 'alex';
-    update public.expenses set split = array_remove(split, 'alex') where 'alex' = any (split) and cardinality(split) > 1;
-    begin
-      delete from public.members where id = 'alex';
-    exception when foreign_key_violation then
-      null;  -- si quedó ligado a algún gasto, se conserva en la base; la página ya no lo muestra
-    end;
-  end if;
-end
-$$;
 
 -- ─────────────────────────────── Funciones ───────────────────────────────
 
