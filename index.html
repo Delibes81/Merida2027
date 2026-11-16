@@ -87,7 +87,7 @@
           <ul class="ev">
             <li><span class="t">AM</span><div><b>Vuelo MEX → MID</b><p>Liliana, Delibes y Alex van en el mismo vuelo. La idea es que todos lleguemos a una hora parecida. <span class="tbd">hora por confirmar</span></p></div></li>
             <li><span class="t">+50′</span><div><b>Camioneta a la hacienda</b><p>Está en Tecoh, a 50 minutos del centro de Mérida.</p></div></li>
-            <li><time>17:00</time><div><b>Rompehielos</b><p>En el bar con alberca de la hacienda, para brindar y empezar a celebrar.</p></div></li>
+            <li><time>17:00</time><div><b>Rompehielos</b><p>En el bar con alberca de la hacienda, para brindar y empezar a celebrar. Aquí nos alcanzan Caro y Takeshi, que llegan por su cuenta.</p></div></li>
           </ul>
         </div>
       </article>
@@ -121,6 +121,7 @@
           <h3>Día libre en la costa</h3>
           <ul class="ev">
             <li><span class="t">Todo</span><div><b>A elegir entre todos</b><p>Playa de los Columpios, Playa de los Cerditos o cenotes cercanos.</p></div></li>
+            <li><span class="t">—</span><div><b>Takeshi regresa</b><p>Se va por su cuenta. Los demás seguimos hasta el martes.</p></div></li>
           </ul>
         </div>
       </article>
@@ -323,7 +324,7 @@
           <label for="c-pers">Personas<input id="c-pers" type="number" inputmode="numeric" min="1" step="1" value="9"></label>
           <label for="c-dias">Días<input id="c-dias" type="number" inputmode="numeric" min="1" step="1" value="6"></label>
         </div>
-        <p class="fine">Cotización de la hoja: 13 mil por 6 días, entre los 9 adultos. No incluye gasolina ni casetas.</p>
+        <p class="fine">Cotización de la hoja: 13 mil por 6 días, parejo entre los 9 adultos. No incluye gasolina ni casetas. Takeshi se va el domingo 28; ajusten su parte si acuerdan otra cosa.</p>
       </div>
       <div class="card pass rise">
         <div class="pass-main">
@@ -352,7 +353,7 @@
         <div><p class="eyebrow">Gastos del grupo</p><b class="ledger-total" id="exTotal">$0</b></div>
         <button class="btn hot" id="exAdd" type="button">Agregar gasto</button>
       </div>
-      <div class="locked">Entra con el código del grupo para registrar gastos y ver quién le debe a quién. <button class="btn" type="button" data-join>Entrar</button></div>
+      <div class="locked">Entra con el código del grupo para registrar gastos. Se dividen por persona y las cuentas se hacen por familia o pareja. <button class="btn" type="button" data-join>Entrar</button></div>
       <div id="exBody" hidden>
         <ul class="ex-list" id="exList"></ul>
         <div class="ledger-cols">
@@ -365,7 +366,7 @@
 
   <section class="sec" id="grupo">
     <div class="sec-head">
-      <p class="eyebrow">9 adultos y Alex</p>
+      <p class="eyebrow">Una familia, dos parejas y tres por su cuenta</p>
       <h2>El grupo</h2>
       <p id="crewSum">Cada quien captura su vuelo para saber a qué hora llegamos todos. <button class="link" type="button" data-join>Entra con el código del grupo</button> para verlos.</p>
     </div>
@@ -421,7 +422,7 @@
       <label class="fld" for="exAmount">Monto (MXN)<input id="exAmount" type="number" inputmode="decimal" min="1" step="0.01" required></label>
       <label class="fld" for="exPaid">Pagó<select id="exPaid"></select></label>
     </div>
-    <fieldset><legend>Se divide entre</legend><div class="who" id="exSplit"></div></fieldset>
+    <fieldset><legend>Se divide entre</legend><div class="presets" id="exPresets"></div><div class="who" id="exSplit"></div></fieldset>
     <p class="err" id="exErr" hidden></p>
     <div class="dlg-actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit">Guardar gasto</button></div>
   </form>

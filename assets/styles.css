@@ -248,8 +248,10 @@ main { display: flex; flex-direction: column; gap: clamp(64px, 9vw, 112px); padd
 
 /* El grupo */
 .crew { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 10px; }
-.person { display: grid; grid-template-columns: 42px 1fr auto; gap: 12px; align-items: center; padding: 14px 16px; min-width: 0; }
-.person.me { border-color: var(--aqua); }
+.hh { padding: 4px 16px; min-width: 0; }
+.hh:has(.person.me) { border-color: var(--aqua); }
+.person { display: grid; grid-template-columns: 42px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; min-width: 0; }
+.person + .person { border-top: 1px solid var(--line); }
 .person .p-main { min-width: 0; }
 .person b { font-weight: 700; }
 .person .tag { font: 500 11px var(--mono); padding: 1px 7px; border-radius: 99px; background: var(--aqua); color: var(--ink); margin-left: 6px; vertical-align: 2px; }
@@ -316,6 +318,7 @@ body.joined .locked { display: none; }
 .fld input, .fld select { width: 100%; min-width: 0; padding: 11px 12px; font: 600 16px var(--body); letter-spacing: 0; text-transform: none; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; }
 .dlg .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
 .who { display: flex; flex-wrap: wrap; gap: 8px; }
+.presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; --c: var(--aqua); }
 .who label { cursor: pointer; position: relative; }
 .who input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .who span { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border-radius: 99px; border: 1px solid var(--line); font-weight: 700; font-size: 14px; }

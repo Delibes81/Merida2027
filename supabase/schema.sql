@@ -12,10 +12,13 @@
 -- ─────────────────────────────── Tablas ───────────────────────────────
 
 create table if not exists public.members (
-  id    text primary key,
-  name  text not null,
-  adult boolean not null default true,
-  sort  int not null default 0
+  id        text primary key,
+  name      text not null,
+  adult     boolean not null default true,
+  household text not null,  -- con quién hace cuentas: familia, pareja o por su cuenta
+  with_from date not null default '2027-02-25',  -- días que pasa con el grupo
+  with_to   date not null default '2027-03-02',
+  sort      int not null default 0
 );
 
 -- Un dispositivo (sesión anónima de Supabase) ligado a una persona del grupo.
@@ -69,18 +72,19 @@ create table if not exists public.rsvps (
 
 -- ─────────────────────────────── El grupo ───────────────────────────────
 
-insert into public.members (id, name, adult, sort) values
-  ('liliana', 'Liliana', true, 1),
-  ('delibes', 'Delibes', true, 2),
-  ('alex',    'Alex',    false, 3),
-  ('jorge',   'Jorge',   true, 4),
-  ('zamy',    'Zamy',    true, 5),
-  ('chang',   'Chang',   true, 6),
-  ('sonia',   'Sonia',   true, 7),
-  ('takeshi', 'Takeshi', true, 8),
-  ('caro',    'Caro',    true, 9),
-  ('lore',    'Lore',    true, 10)
-on conflict (id) do update set name = excluded.name, adult = excluded.adult, sort = excluded.sort;
+insert into public.members (id, name, adult, household, with_to, sort) values
+  ('liliana', 'Liliana', true,  'dl',      '2027-03-02', 1),
+  ('delibes', 'Delibes', true,  'dl',      '2027-03-02', 2),
+  ('alex',    'Alex',    false, 'dl',      '2027-03-02', 3),
+  ('jorge',   'Jorge',   true,  'jz',      '2027-03-02', 4),
+  ('zamy',    'Zamy',    true,  'jz',      '2027-03-02', 5),
+  ('chang',   'Chang',   true,  'cs',      '2027-03-02', 6),
+  ('sonia',   'Sonia',   true,  'cs',      '2027-03-02', 7),
+  ('takeshi', 'Takeshi', true,  'takeshi', '2027-02-28', 8),  -- se va el domingo
+  ('caro',    'Caro',    true,  'caro',    '2027-03-02', 9),
+  ('lore',    'Lore',    true,  'lore',    '2027-03-02', 10)
+on conflict (id) do update set name = excluded.name, adult = excluded.adult,
+  household = excluded.household, with_to = excluded.with_to, sort = excluded.sort;
 
 -- ─────────────────────────────── Funciones ───────────────────────────────
 

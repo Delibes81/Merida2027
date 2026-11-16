@@ -5,18 +5,31 @@
   'use strict';
 
   var cfg = window.TRIP_CONFIG || {};
+  // hh: con quién hace cuentas (familia, pareja o por su cuenta).
+  // from/to: días que pasa con el grupo cuando no son los del viaje completo.
   var MEMBERS = [
-    { id: 'liliana', name: 'Liliana', adult: true, h: 335 },
-    { id: 'delibes', name: 'Delibes', adult: true, h: 20 },
-    { id: 'alex', name: 'Alex', adult: false, h: 45 },
-    { id: 'jorge', name: 'Jorge', adult: true, h: 170 },
-    { id: 'zamy', name: 'Zamy', adult: true, h: 150 },
-    { id: 'chang', name: 'Chang', adult: true, h: 200 },
-    { id: 'sonia', name: 'Sonia', adult: true, h: 250 },
-    { id: 'takeshi', name: 'Takeshi', adult: true, h: 280 },
-    { id: 'caro', name: 'Caro', adult: true, h: 310 },
-    { id: 'lore', name: 'Lore', adult: true, h: 80 }
+    { id: 'liliana', name: 'Liliana', adult: true, h: 335, hh: 'dl' },
+    { id: 'delibes', name: 'Delibes', adult: true, h: 20, hh: 'dl' },
+    { id: 'alex', name: 'Alex', adult: false, h: 45, hh: 'dl' },
+    { id: 'jorge', name: 'Jorge', adult: true, h: 170, hh: 'jz' },
+    { id: 'zamy', name: 'Zamy', adult: true, h: 150, hh: 'jz' },
+    { id: 'chang', name: 'Chang', adult: true, h: 200, hh: 'cs' },
+    { id: 'sonia', name: 'Sonia', adult: true, h: 250, hh: 'cs' },
+    { id: 'takeshi', name: 'Takeshi', adult: true, h: 280, hh: 'takeshi', arr: '2027-02-24', to: '2027-02-28',
+      note: 'Llega el miércoles 24 por su cuenta y se va el domingo 28' },
+    { id: 'caro', name: 'Caro', adult: true, h: 310, hh: 'caro', note: 'Llega por su cuenta y se une el jueves 25' },
+    { id: 'lore', name: 'Lore', adult: true, h: 80, hh: 'lore' }
   ];
+  var HH = [
+    { id: 'dl', name: 'Delibes y Liliana', plural: true },
+    { id: 'jz', name: 'Jorge y Zamy', plural: true },
+    { id: 'cs', name: 'Chang y Sonia', plural: true },
+    { id: 'takeshi', name: 'Takeshi' },
+    { id: 'caro', name: 'Caro' },
+    { id: 'lore', name: 'Lore' }
+  ];
+  var hhById = {};
+  HH.forEach(function (h) { hhById[h.id] = h; });
   var byId = {};
   MEMBERS.forEach(function (m) { byId[m.id] = m; });
   var ARRIVAL = '2027-02-25', RETURN = '2027-03-02';
@@ -63,7 +76,7 @@
     if (t.closest('[data-close]')) return close(t.closest('dialog'));
     if (t.closest('[data-join]')) return openJoin();
     var v = t.closest('.vote');
-    if (v) return me ? toggleRsvp(v.parentNode.getAttribute('data-act')) : openJoin();
+    if (v && v.parentNode.hasAttribute('data-act')) return me ? toggleRsvp(v.parentNode.getAttribute('data-act')) : openJoin();
     var f = t.closest('[data-flight]');
     if (f) return openFlight(f.getAttribute('data-flight'));
     var x = t.closest('[data-del]');
@@ -239,16 +252,19 @@
     return '<span class="p-fl has">' + parts.join(' · ') + '</span>';
   }
   function paintCrew() {
-    $('crew').innerHTML = MEMBERS.map(function (m) {
-      var f = S.flights[m.id], lines = '';
-      if (me) {
-        lines = f ? flightLine('Llega', f.arr_date, f.arr_time, f.arr_flight, ARRIVAL) + flightLine('Sale', f.dep_date, f.dep_time, f.dep_flight, RETURN) : '';
-        if (!lines) lines = '<span class="p-fl">Sin vuelo capturado</span>';
-      }
-      return '<li class="card person' + (me === m ? ' me' : '') + '">' + av(m) +
-        '<div class="p-main"><b>' + esc(m.name) + '</b>' + (me === m ? '<span class="tag">tú</span>' : '') + lines + '</div>' +
-        (me ? '<button class="icon-btn" type="button" data-flight="' + m.id + '" aria-label="Editar vuelo de ' + esc(m.name) + '">' + PENCIL + '</button>' : '') +
-        '</li>';
+    $('crew').innerHTML = HH.map(function (h) {
+      var rows = MEMBERS.filter(function (m) { return m.hh === h.id; }).map(function (m) {
+        var f = S.flights[m.id], lines = m.note ? '<span class="p-fl">' + esc(m.note) + '</span>' : '';
+        if (me) {
+          var fl = f ? flightLine('Llega', f.arr_date, f.arr_time, f.arr_flight, m.arr || ARRIVAL) + flightLine('Sale', f.dep_date, f.dep_time, f.dep_flight, m.to || RETURN) : '';
+          lines += fl || '<span class="p-fl">Sin vuelo capturado</span>';
+        }
+        return '<div class="person' + (me === m ? ' me' : '') + '">' + av(m) +
+          '<div class="p-main"><b>' + esc(m.name) + '</b>' + (me === m ? '<span class="tag">tú</span>' : '') + lines + '</div>' +
+          (me ? '<button class="icon-btn" type="button" data-flight="' + m.id + '" aria-label="Editar vuelo de ' + esc(m.name) + '">' + PENCIL + '</button>' : '') +
+          '</div>';
+      }).join('');
+      return '<li class="card hh">' + rows + '</li>';
     }).join('');
     if (!me) { $('crewSum').innerHTML = crewIntro; return; }
     var fl = MEMBERS.map(function (m) { return S.flights[m.id]; }).filter(function (f) { return f && (f.arr_time || f.arr_flight); });
@@ -262,10 +278,10 @@
   $('flWho').innerHTML = MEMBERS.map(function (m) { return '<option value="' + m.id + '">' + esc(m.name) + '</option>'; }).join('');
   function fillFlight(id) {
     var f = S.flights[id] || {};
-    $('flArrDate').value = f.arr_date || ARRIVAL;
+    $('flArrDate').value = f.arr_date || byId[id].arr || ARRIVAL;
     $('flArrTime').value = f.arr_time ? String(f.arr_time).slice(0, 5) : '';
     $('flArrNo').value = f.arr_flight || '';
-    $('flDepDate').value = f.dep_date || RETURN;
+    $('flDepDate').value = f.dep_date || byId[id].to || RETURN;
     $('flDepTime').value = f.dep_time ? String(f.dep_time).slice(0, 5) : '';
     $('flDepNo').value = f.dep_flight || '';
   }
@@ -290,8 +306,9 @@
   });
 
   // ── Gastos ──
-  // Saldos en centavos: lo que pagó cada quien menos su parte. Los centavos
-  // sobrantes de una división se reparten de uno en uno.
+  // El gasto se divide por persona, pero las cuentas se hacen por familia o pareja:
+  // el saldo es lo que pagó cada grupo menos las partes de su gente, en centavos.
+  // Los centavos sobrantes de una división se reparten de uno en uno.
   function balances(list) {
     var bal = {};
     list.forEach(function (x) {
@@ -299,8 +316,9 @@
       var split = (x.split || []).filter(function (id) { return byId[id]; });
       if (!split.length || !byId[x.paid_by]) return;
       var share = Math.floor(cents / split.length), extra = cents - share * split.length;
-      bal[x.paid_by] = (bal[x.paid_by] || 0) + cents;
-      split.forEach(function (id, i) { bal[id] = (bal[id] || 0) - share - (i < extra ? 1 : 0); });
+      var payer = byId[x.paid_by].hh;
+      bal[payer] = (bal[payer] || 0) + cents;
+      split.forEach(function (id, i) { var h = byId[id].hh; bal[h] = (bal[h] || 0) - share - (i < extra ? 1 : 0); });
     });
     return bal;
   }
@@ -333,14 +351,14 @@
         (x.created_by === me.id ? '<button class="icon-btn" type="button" data-del="' + esc(x.id) + '" aria-label="Borrar ' + esc(x.concept) + '">' + TRASH + '</button>' : '<span></span>') + '</li>';
     }).join('') : '<li class="empty" style="display:block">Todavía no hay gastos. El primero suele ser la camioneta.</li>';
     var bal = balances(S.expenses);
-    var ids = MEMBERS.map(function (m) { return m.id; }).filter(function (id) { return bal[id]; });
+    var ids = HH.map(function (h) { return h.id; }).filter(function (id) { return bal[id]; });
     $('exBal').innerHTML = ids.length ? ids.map(function (id) {
       var c = bal[id];
-      return '<li><span>' + esc(byId[id].name) + '</span><span class="' + (c > 0 ? 'pos' : 'neg') + '">' + (c > 0 ? '+' : '−') + money(Math.abs(c)) + '</span></li>';
+      return '<li><span>' + esc(hhById[id].name) + '</span><span class="' + (c > 0 ? 'pos' : 'neg') + '">' + (c > 0 ? '+' : '−') + money(Math.abs(c)) + '</span></li>';
     }).join('') : '<li><span>Todos a mano.</span></li>';
     var pays = settle(bal);
     $('exPay').innerHTML = pays.length ? pays.map(function (p) {
-      return '<li><span><b>' + esc(byId[p.from].name) + '</b> le paga a <b>' + esc(byId[p.to].name) + '</b></span><span>' + money(p.cents) + '</span></li>';
+      return '<li><span><b>' + esc(hhById[p.from].name) + '</b> ' + (hhById[p.from].plural ? 'le pagan' : 'le paga') + ' a <b>' + esc(hhById[p.to].name) + '</b></span><span>' + money(p.cents) + '</span></li>';
     }).join('') : '<li><span>Nadie le debe a nadie.</span></li>';
   }
 
@@ -349,6 +367,18 @@
   $('exSplit').innerHTML = MEMBERS.map(function (m) {
     return '<label><input type="checkbox" name="split" value="' + m.id + '"' + (m.adult ? ' checked' : '') + '><span>' + av(m) + esc(m.name) + '</span></label>';
   }).join('');
+  // Atajos para dividir: todos los adultos, o solo quienes siguen hasta el martes.
+  var adults = MEMBERS.filter(function (m) { return m.adult; });
+  var staying = adults.filter(function (m) { return !m.to; });
+  var early = adults.filter(function (m) { return m.to; }).map(function (m) { return m.name; });
+  $('exPresets').innerHTML = '<button type="button" class="vote" data-preset="all">Los ' + adults.length + ' adultos</button>' +
+    (early.length ? '<button type="button" class="vote" data-preset="stay">Sin ' + esc(early.join(' ni ')) + ' (' + staying.length + ')</button>' : '');
+  $('exPresets').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-preset]');
+    if (!b) return;
+    var set = (b.getAttribute('data-preset') === 'all' ? adults : staying).map(function (m) { return m.id; });
+    all('#exSplit input').forEach(function (i) { i.checked = set.indexOf(i.value) > -1; });
+  });
   $('exAdd').addEventListener('click', function () {
     $('exForm').reset(); fail($('exErr'), '');
     $('exPaid').value = me.adult ? me.id : 'delibes';
