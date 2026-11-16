@@ -1,0 +1,10 @@
+{
+  "name": "merida2027",
+  "private": true,
+  "type": "module",
+  "description": "Sitio del grupo para el viaje a Mérida 2027",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "zod": "^4.6.7"
+  }
+}

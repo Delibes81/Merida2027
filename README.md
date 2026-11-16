@@ -9,11 +9,19 @@ Sitio del grupo para el viaje a la boda de Clau y Diego en Yucatán (25 feb – 
 | `index.html` | La página |
 | `assets/styles.css` | Estilos |
 | `assets/app.js` | Portada animada, cuenta regresiva, mapa y calculadora |
-| `assets/grupo.js` | Funciones compartidas: acceso, pendientes en vivo, "me apunto", tablero de vuelos, hospedaje y gastos |
+| `assets/grupo.js` | Núcleo del grupo: acceso, pendientes, "me apunto", vuelos, reservas y gastos |
+| `assets/avisos.js` | Muro de avisos |
+| `assets/docs.js` | Documentos del viaje (archivos privados en Supabase Storage) |
+| `assets/cuentas.js` | Dividir una cuenta por consumo |
 | `assets/config.js` | URL y clave pública de Supabase |
-| `supabase/schema.sql` | Tablas, permisos y tiempo real |
+| `api/ticket.js` | Función de Vercel que lee la foto de un ticket con la API de Claude |
+| `supabase/schema.sql` | Tablas, permisos, almacenamiento y tiempo real |
 
-No hay dependencias que instalar ni paso de build.
+La página no tiene paso de build. La única dependencia es la de `api/ticket.js`, que Vercel instala solo.
+
+## Lectura de tickets (opcional)
+
+Para que la foto de un ticket se convierta en renglones, agrega en Vercel (*Settings → Environment Variables*) la variable `ANTHROPIC_API_KEY` con una clave de la consola de Anthropic y vuelve a desplegar. Sin ella todo funciona igual, solo que los renglones se capturan a mano. La función solo responde a quien ya entró al grupo, y cada lectura tiene un costo pequeño que se cobra a esa clave.
 
 ## Conectar Supabase (una sola vez)
 

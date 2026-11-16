@@ -55,7 +55,9 @@
   var TRASH = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg>';
 
   var sb = null, me = null, chan = null;
-  var S = { todos: {}, flights: {}, expenses: [], rsvps: [], stays: {} };
+  var fresh = function () { return { todos: {}, checks: [], flights: {}, expenses: [], rsvps: [], stays: {} }; };
+  var S = fresh();
+  var painters = [], resets = [];
   var ready = !!(cfg.supabaseUrl && cfg.supabaseKey && window.supabase && window.supabase.createClient);
 
   // ── Avisos y diálogos ──
@@ -63,7 +65,7 @@
   function toast(msg) {
     var t = $('toast');
     t.textContent = msg; t.classList.add('show');
-    clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, 2600);
+    clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove('show'); }, Math.max(2600, msg.length * 70));
   }
   function open(d) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); }
   function close(d) { if (d.close) d.close(); else d.removeAttribute('open'); }
@@ -134,7 +136,7 @@
   $('leaveBtn').addEventListener('click', async function () {
     await sb.rpc('leave_trip');
     if (chan) { sb.removeChannel(chan); chan = null; }
-    me = null; S = { todos: {}, flights: {}, expenses: [], rsvps: [], stays: {} };
+    me = null; Object.assign(S, fresh()); resets.forEach(function (f) { f(); });
     close($('dlgMe')); paintAll();
     toast('Saliste del grupo en este dispositivo.');
   });
@@ -174,6 +176,11 @@
       if (r.error) return;
       S.stays = {}; r.data.forEach(function (x) { S.stays[x.id] = x; }); paintStays();
     },
+    todo_checks: async function () {
+      var r = await sb.from('todo_checks').select('*');
+      if (r.error) return;
+      S.checks = r.data; paintTodos();
+    },
     rsvps: async function () {
       var r = await sb.from('rsvps').select('*');
       if (r.error) return;
@@ -187,21 +194,32 @@
     b.classList.toggle('in', !!me);
     b.innerHTML = me ? av(me) + esc(me.name) : 'Entrar';
     paintTodos(); paintActs(); paintCrew(); paintFlights(); paintStays(); paintExpenses();
+    painters.forEach(function (f) { f(); });
   }
 
   // ── Pendientes ──
   var LS = 'merida2027.todo';
   var boxes = all('#todo input');
   function localTodos() { try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch (e) { return {}; } }
+  var isPersonal = function (cb) { return cb.closest('label').hasAttribute('data-personal'); };
   function paintTodos() {
     var local = me ? null : localTodos(), done = 0;
     boxes.forEach(function (cb) {
-      var row = me ? S.todos[cb.id] : null;
-      cb.checked = me ? !!(row && row.done) : !!local[cb.id];
+      var lab = cb.closest('label'), note = lab.querySelector('.t small');
+      // El dato va en la etiqueta y en la nota: la nota es la que lo pinta (attr() no lee al padre).
+      var mark = function (k, v) { [lab, note].forEach(function (el) { if (v) el.setAttribute(k, v); else el.removeAttribute(k); }); };
+      mark('data-by', ''); mark('data-count', '');
+      if (!me) cb.checked = !!local[cb.id];
+      else if (isPersonal(cb)) {
+        var who = S.checks.filter(function (c) { return c.todo_id === cb.id && byId[c.member_id]; });
+        cb.checked = who.some(function (c) { return c.member_id === me.id; });
+        mark('data-count', who.length + ' de ' + MEMBERS.length + ' ya');
+      } else {
+        var row = S.todos[cb.id];
+        cb.checked = !!(row && row.done);
+        if (cb.checked && byId[row.done_by]) mark('data-by', byId[row.done_by].name);
+      }
       if (cb.checked) done++;
-      var who = row && row.done && byId[row.done_by];
-      var lab = cb.closest('label');
-      if (who) lab.setAttribute('data-by', who.name); else lab.removeAttribute('data-by');
     });
     $('progBar').style.width = (100 * done / boxes.length) + '%';
     $('progTxt').textContent = done + ' de ' + boxes.length + ' listos';
@@ -214,10 +232,21 @@
         try { localStorage.setItem(LS, JSON.stringify(l)); } catch (e) {}
         return paintTodos();
       }
+      var r;
+      if (isPersonal(cb)) {
+        var before = S.checks;
+        S.checks = before.filter(function (c) { return !(c.todo_id === cb.id && c.member_id === me.id); });
+        if (cb.checked) S.checks = S.checks.concat([{ todo_id: cb.id, member_id: me.id }]);
+        paintTodos();
+        r = cb.checked ? await sb.from('todo_checks').insert({ todo_id: cb.id, member_id: me.id })
+          : await sb.from('todo_checks').delete().eq('todo_id', cb.id).eq('member_id', me.id);
+        if (r.error) { S.checks = before; paintTodos(); toast('No se pudo guardar. Intenta de nuevo.'); }
+        return;
+      }
       var prev = S.todos[cb.id];
       S.todos[cb.id] = { id: cb.id, done: cb.checked, done_by: me.id };
       paintTodos();
-      var r = await sb.from('todos').upsert({ id: cb.id, done: cb.checked, done_by: me.id, updated_at: new Date().toISOString() });
+      r = await sb.from('todos').upsert({ id: cb.id, done: cb.checked, done_by: me.id, updated_at: new Date().toISOString() });
       if (r.error) { S.todos[cb.id] = prev; paintTodos(); toast('No se pudo guardar. Intenta de nuevo.'); }
     });
   });
@@ -371,6 +400,7 @@
 
   // ── Hospedaje ──
   var STAYS = [
+    { id: 'camioneta', name: 'Camioneta', place: 'Aeropuerto de Mérida (MID)', from: '2027-02-25', to: '2027-03-02', span: '6 días', c: 'coral', car: true },
     { id: 'hacienda', name: 'Hacienda Sotuta de Peón', place: 'Tecoh, Yucatán', from: '2027-02-25', to: '2027-02-27', nights: 2, c: 'pink',
       note: 'Cada quien reserva su cabaña directo con la hacienda, con el código de la invitación, antes del 26 de enero.' },
     { id: 'chuburna', name: 'Airbnb en Chuburná', place: 'Chuburná Puerto, Yucatán', from: '2027-02-27', to: '2027-03-01', nights: 2, c: 'aqua' },
@@ -383,8 +413,8 @@
     $('stays').innerHTML = STAYS.map(function (b) {
       var d = (me && S.stays[b.id]) || {}, by = byId[d.booked_by], url = safeUrl(d.url);
       var facts = '';
-      if (d.checkin) facts += '<div><dt>Check-in</dt><dd>' + String(d.checkin).slice(0, 5) + '</dd></div>';
-      if (d.checkout) facts += '<div><dt>Check-out</dt><dd>' + String(d.checkout).slice(0, 5) + '</dd></div>';
+      if (d.checkin) facts += '<div><dt>' + (b.car ? 'Recogida' : 'Check-in') + '</dt><dd>' + String(d.checkin).slice(0, 5) + '</dd></div>';
+      if (d.checkout) facts += '<div><dt>' + (b.car ? 'Entrega' : 'Check-out') + '</dt><dd>' + String(d.checkout).slice(0, 5) + '</dd></div>';
       if (d.total != null && d.total !== '') facts += '<div><dt>Total</dt><dd>' + money(Math.round(Number(d.total) * 100)) + '</dd></div>';
       var maps = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(d.address || (b.id === 'hacienda' ? b.name + ' ' + b.place : b.place));
       return '<article class="card stay-card rise" style="--c: var(--' + b.c + ')">' +
@@ -392,18 +422,20 @@
           (me ? (by ? '<span class="pill">Reservó ' + esc(by.name) + '</span>' : '<span class="pill open">' + (b.id === 'hacienda' ? 'Cada quien reserva' : 'Por reservar') + '</span>') : '<span></span>') +
           (me ? '<button class="icon-btn" type="button" data-stay="' + b.id + '" aria-label="Editar ' + esc(b.name) + '">' + PENCIL + '</button>' : '') +
         '</div>' +
-        '<p class="eyebrow">' + fmtDate(b.from) + ' → ' + fmtDate(b.to) + ' · ' + b.nights + (b.nights === 1 ? ' noche' : ' noches') + '</p>' +
+        '<p class="eyebrow">' + fmtDate(b.from) + ' → ' + fmtDate(b.to) + ' · ' + (b.span || b.nights + (b.nights === 1 ? ' noche' : ' noches')) + '</p>' +
         '<h3>' + esc(d.name || b.name) + '</h3>' +
         '<p>' + esc(d.address || b.place) + '</p>' +
         (b.note ? '<p>' + esc(b.note) + '</p>' : '') +
         (facts ? '<dl>' + facts + '</dl>' : '') +
         (d.notes ? '<p class="notes">' + esc(d.notes) + '</p>' : '') +
+        (me && T.docsHtml ? T.docsHtml(b.id) : '') +
         '<div class="btns">' +
-          (url ? '<a class="btn hot" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">Ver el anuncio</a>' : '') +
+          (url ? '<a class="btn hot" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' + (b.car ? 'Ver la reserva' : 'Ver el anuncio') + '</a>' : '') +
           '<a class="btn" href="' + esc(maps) + '" target="_blank" rel="noopener">Cómo llegar</a>' +
           (me && by && Number(d.total) > 0 ? '<button class="btn" type="button" data-stay-ex="' + b.id + '">Pasar a gastos</button>' : '') +
         '</div></article>';
-    }).join('');
+    }).join('') + (me && T.docsHtml ? '<article class="card stay-card" style="--c: var(--muted)"><div class="stay-top"><span></span></div>' +
+      '<p class="eyebrow">Lo demás</p><h3>Otros documentos</h3><p>Seguros, pases de abordar, lo que convenga tener a la mano.</p>' + T.docsHtml('general') + '</article>' : '');
   }
   $('stBy').innerHTML = '<option value="">Nadie todavía</option>' + MEMBERS.filter(function (m) { return m.adult; })
     .map(function (m) { return '<option value="' + m.id + '">' + esc(m.name) + '</option>'; }).join('');
@@ -413,7 +445,10 @@
     var b = stayById[id], d = S.stays[id] || {};
     stayEditing = id;
     $('stT').textContent = b.name;
-    $('stName').value = d.name || ''; $('stName').placeholder = b.name;
+    $('stNameL').textContent = b.car ? 'Arrendadora' : 'Nombre del lugar';
+    $('stInL').textContent = b.car ? 'Recogida' : 'Check-in';
+    $('stOutL').textContent = b.car ? 'Entrega' : 'Check-out';
+    $('stName').value = d.name || ''; $('stName').placeholder = b.car ? '' : b.name;
     $('stUrl').value = d.url || ''; $('stAddr').value = d.address || '';
     $('stIn').value = d.checkin ? String(d.checkin).slice(0, 5) : '';
     $('stOut').value = d.checkout ? String(d.checkout).slice(0, 5) : '';
@@ -457,6 +492,14 @@
       var cents = Math.round(Number(x.amount) * 100);
       var split = (x.split || []).filter(function (id) { return byId[id]; });
       if (!split.length || !byId[x.paid_by]) return;
+      if (x.shares) {  // cuenta dividida por consumo: cada quien trae su monto exacto
+        var hp = byId[x.paid_by].hh;
+        bal[hp] = (bal[hp] || 0) + cents;
+        Object.keys(x.shares).forEach(function (id) {
+          if (byId[id]) bal[byId[id].hh] = (bal[byId[id].hh] || 0) - Math.round(Number(x.shares[id]) * 100);
+        });
+        return;
+      }
       var share = Math.floor(cents / split.length), extra = cents - share * split.length;
       var payer = byId[x.paid_by].hh;
       bal[payer] = (bal[payer] || 0) + cents;
@@ -488,7 +531,7 @@
     if (!me) return;
     $('exList').innerHTML = S.expenses.length ? S.expenses.map(function (x) {
       var p = byId[x.paid_by], n = (x.split || []).length;
-      return '<li><div><b>' + esc(x.concept) + '</b><small>Pagó ' + esc(p ? p.name : '?') + ' · entre ' + n + (n === 1 ? ' persona' : ' personas') + '</small></div>' +
+      return '<li><div><b>' + esc(x.concept) + '</b><small>Pagó ' + esc(p ? p.name : '?') + ' · ' + (x.shares ? 'según lo que pidió cada quien' : 'entre ' + n + (n === 1 ? ' persona' : ' personas')) + '</small></div>' +
         '<span class="amt">' + money(Math.round(Number(x.amount) * 100)) + '</span>' +
         (x.created_by === me.id ? '<button class="icon-btn" type="button" data-del="' + esc(x.id) + '" aria-label="Borrar ' + esc(x.concept) + '">' + TRASH + '</button>' : '<span></span>') + '</li>';
     }).join('') : '<li class="empty" style="display:block">Todavía no hay gastos. El primero suele ser la camioneta.</li>';
@@ -546,13 +589,24 @@
     else toast('Gasto borrado.');
   }
 
-  // ── Arranque ──
-  paintAll();
-  if (ready) {
+  // ── Interfaz para los demás módulos (avisos, documentos, cuentas) ──
+  var T = window.Trip = {
+    $: $, all: all, esc: esc, av: av, money: money, fmtDate: fmtDate, toast: toast, open: open, close: close, fail: fail, busy: busy,
+    MEMBERS: MEMBERS, byId: byId, HH: HH, S: S, load: load, painters: painters, resets: resets, PENCIL: PENCIL, TRASH: TRASH,
+    openJoin: openJoin, paintStays: paintStays, reloadExpenses: function () { return load.expenses(); }
+  };
+  Object.defineProperty(T, 'me', { get: function () { return me; } });
+  Object.defineProperty(T, 'sb', { get: function () { return sb; } });
+
+  // ── Arranque: cuando ya cargaron todos los módulos ──
+  function start() {
+    paintAll();
+    if (!ready) return;
     sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
     sb.auth.getSession().then(function (r) {
       if (!r.data || !r.data.session) return;
       return sb.rpc('my_member').then(function (m) { if (m.data) return enter(m.data); });
     }).catch(function () {});
   }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

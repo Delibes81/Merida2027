@@ -55,7 +55,7 @@ create table if not exists public.flights (
 
 -- Datos de cada hospedaje (anuncio, dirección, horarios, costo).
 create table if not exists public.stays (
-  id         text primary key check (id in ('hacienda', 'chuburna', 'merida')),
+  id         text primary key,  -- 'camioneta', 'hacienda', 'chuburna' o 'merida'
   name       text check (char_length(name) <= 80),
   url        text check (url is null or (char_length(url) <= 500 and url ~* '^https?://')),
   address    text check (char_length(address) <= 200),
@@ -259,12 +259,157 @@ drop policy if exists rsvps_delete on public.rsvps;
 create policy rsvps_delete on public.rsvps for delete to authenticated
   using (member_id = public.my_member());
 
+-- ─────────────────── Avisos, pendientes personales, documentos y cuentas ───────────────────
+
+-- Las reservas incluyen la camioneta además de los tres hospedajes.
+alter table public.stays drop constraint if exists stays_id_check;
+alter table public.stays add constraint stays_id_check
+  check (id in ('camioneta', 'hacienda', 'chuburna', 'merida'));
+
+-- Pendientes que cada quien marca por su cuenta (confirmar, vuelo, cabaña).
+create table if not exists public.todo_checks (
+  todo_id    text not null check (char_length(todo_id) <= 40),
+  member_id  text not null references public.members (id),
+  created_at timestamptz not null default now(),
+  primary key (todo_id, member_id)
+);
+
+-- Muro de avisos.
+create table if not exists public.posts (
+  id         uuid primary key default gen_random_uuid(),
+  body       text not null check (char_length(body) between 1 and 500),
+  author     text not null references public.members (id),
+  created_at timestamptz not null default now()
+);
+
+-- Documentos del viaje. El archivo vive en Storage (bucket privado "viaje").
+create table if not exists public.docs (
+  id          uuid primary key default gen_random_uuid(),
+  ref         text not null check (ref in ('camioneta', 'hacienda', 'chuburna', 'merida', 'general')),
+  title       text not null check (char_length(title) between 1 and 80),
+  path        text not null unique check (char_length(path) <= 200),
+  mime        text,
+  size        int,
+  uploaded_by text not null references public.members (id),
+  created_at  timestamptz not null default now()
+);
+
+-- Un gasto puede traer el monto exacto de cada quien (cuentas divididas por consumo).
+alter table public.expenses add column if not exists shares jsonb;
+
+-- Cuentas para dividir por consumo: la cuenta, sus renglones y quién pidió cada uno.
+create table if not exists public.tickets (
+  id         uuid primary key default gen_random_uuid(),
+  title      text not null check (char_length(title) between 1 and 80),
+  paid_by    text not null references public.members (id),
+  tip        numeric(10, 2) not null default 0 check (tip >= 0),
+  expense_id uuid references public.expenses (id) on delete set null,  -- con gasto = cuenta cerrada
+  created_by text not null references public.members (id),
+  created_at timestamptz not null default now()
+);
+create table if not exists public.ticket_items (
+  id        uuid primary key default gen_random_uuid(),
+  ticket_id uuid not null references public.tickets (id) on delete cascade,
+  name      text not null check (char_length(name) between 1 and 80),
+  amount    numeric(10, 2) not null check (amount > 0),
+  sort      int not null default 0
+);
+create table if not exists public.ticket_claims (
+  item_id   uuid not null references public.ticket_items (id) on delete cascade,
+  member_id text not null references public.members (id),
+  primary key (item_id, member_id)
+);
+
+alter table public.todo_checks   enable row level security;
+alter table public.posts         enable row level security;
+alter table public.docs          enable row level security;
+alter table public.tickets       enable row level security;
+alter table public.ticket_items  enable row level security;
+alter table public.ticket_claims enable row level security;
+
+revoke all on public.todo_checks, public.posts, public.docs, public.tickets,
+              public.ticket_items, public.ticket_claims from anon;
+grant select, insert, delete         on public.todo_checks   to authenticated;
+grant select, insert, delete         on public.posts         to authenticated;
+grant select, insert, delete         on public.docs          to authenticated;
+grant select, insert, update, delete on public.tickets       to authenticated;
+grant select, insert, delete         on public.ticket_items  to authenticated;
+grant select, insert, delete         on public.ticket_claims to authenticated;
+
+drop policy if exists todo_checks_read on public.todo_checks;
+create policy todo_checks_read on public.todo_checks for select to authenticated
+  using (public.my_member() is not null);
+drop policy if exists todo_checks_insert on public.todo_checks;
+create policy todo_checks_insert on public.todo_checks for insert to authenticated
+  with check (member_id = public.my_member());
+drop policy if exists todo_checks_delete on public.todo_checks;
+create policy todo_checks_delete on public.todo_checks for delete to authenticated
+  using (member_id = public.my_member());
+
+drop policy if exists posts_read on public.posts;
+create policy posts_read on public.posts for select to authenticated
+  using (public.my_member() is not null);
+drop policy if exists posts_insert on public.posts;
+create policy posts_insert on public.posts for insert to authenticated
+  with check (author = public.my_member());
+drop policy if exists posts_delete on public.posts;
+create policy posts_delete on public.posts for delete to authenticated
+  using (author = public.my_member());
+
+drop policy if exists docs_read on public.docs;
+create policy docs_read on public.docs for select to authenticated
+  using (public.my_member() is not null);
+drop policy if exists docs_insert on public.docs;
+create policy docs_insert on public.docs for insert to authenticated
+  with check (uploaded_by = public.my_member());
+drop policy if exists docs_delete on public.docs;
+create policy docs_delete on public.docs for delete to authenticated
+  using (uploaded_by = public.my_member());
+
+drop policy if exists tickets_read on public.tickets;
+create policy tickets_read on public.tickets for select to authenticated
+  using (public.my_member() is not null);
+drop policy if exists tickets_insert on public.tickets;
+create policy tickets_insert on public.tickets for insert to authenticated
+  with check (created_by = public.my_member());
+drop policy if exists tickets_update on public.tickets;
+create policy tickets_update on public.tickets for update to authenticated
+  using (public.my_member() is not null) with check (public.my_member() is not null);
+drop policy if exists tickets_delete on public.tickets;
+create policy tickets_delete on public.tickets for delete to authenticated
+  using (created_by = public.my_member());
+
+-- Renglones y quién pidió qué: cualquiera del grupo los ajusta (también por alguien sin celular a la mano).
+drop policy if exists ticket_items_all on public.ticket_items;
+create policy ticket_items_all on public.ticket_items for all to authenticated
+  using (public.my_member() is not null) with check (public.my_member() is not null);
+drop policy if exists ticket_claims_all on public.ticket_claims;
+create policy ticket_claims_all on public.ticket_claims for all to authenticated
+  using (public.my_member() is not null) with check (public.my_member() is not null);
+
+-- Archivos: bucket privado, 10 MB por archivo, solo PDF e imágenes, solo para el grupo.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('viaje', 'viaje', false, 10485760, array['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic'])
+on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists viaje_read on storage.objects;
+create policy viaje_read on storage.objects for select to authenticated
+  using (bucket_id = 'viaje' and public.my_member() is not null);
+drop policy if exists viaje_insert on storage.objects;
+create policy viaje_insert on storage.objects for insert to authenticated
+  with check (bucket_id = 'viaje' and public.my_member() is not null);
+drop policy if exists viaje_delete on storage.objects;
+create policy viaje_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'viaje' and public.my_member() is not null);
+
 -- ─────────────────────────────── Tiempo real ───────────────────────────────
 
 do $$
 declare t text;
 begin
-  foreach t in array array['todos', 'flights', 'expenses', 'rsvps', 'stays'] loop
+  foreach t in array array['todos', 'flights', 'expenses', 'rsvps', 'stays', 'todo_checks',
+                           'posts', 'docs', 'tickets', 'ticket_items', 'ticket_claims'] loop
     if not exists (
       select 1 from pg_publication_tables
       where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t

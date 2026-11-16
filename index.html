@@ -28,11 +28,12 @@
   <div class="wrap">
     <a class="brand" href="#inicio">MID<span class="grad">·27</span></a>
     <nav id="nav" aria-label="Secciones">
+      <a href="#avisos" class="only-in">Avisos</a>
       <a href="#semana">Semana</a>
       <a href="#boda">Boda</a>
       <a href="#ruta">Ruta</a>
       <a href="#vuelos">Vuelos</a>
-      <a href="#hospedaje">Hospedaje</a>
+      <a href="#reservas">Reservas</a>
       <a href="#lugares">Lugares</a>
       <a href="#pendientes">Pendientes</a>
       <a href="#costos">Costos</a>
@@ -65,6 +66,19 @@
 </header>
 
 <main class="wrap">
+
+  <section class="sec only-in" id="avisos">
+    <div class="sec-head">
+      <p class="eyebrow">Lo último del grupo</p>
+      <h2>Avisos</h2>
+    </div>
+    <form class="card post-form" id="postForm">
+      <label class="sr" for="postBody">Aviso para el grupo</label>
+      <textarea id="postBody" maxlength="500" rows="2" placeholder="Escribe un aviso para todos: horarios, cambios, lo que haga falta…" required></textarea>
+      <button class="btn hot" type="submit">Publicar</button>
+    </form>
+    <ul class="posts" id="posts"></ul>
+  </section>
 
   <section class="sec" id="semana">
     <div class="sec-head">
@@ -269,11 +283,11 @@
     </div>
   </section>
 
-  <section class="sec" id="hospedaje">
+  <section class="sec" id="reservas">
     <div class="sec-head">
-      <p class="eyebrow">Dónde dormimos cada noche</p>
-      <h2>Hospedaje</h2>
-      <p>Cuando se reserve cada lugar, aquí quedan el anuncio, la dirección, los horarios y el costo para que todos los consulten.</p>
+      <p class="eyebrow">Camioneta y hospedaje</p>
+      <h2>Reservas</h2>
+      <p>Cuando se reserve cada cosa, aquí quedan sus datos, el costo y los documentos (contrato, confirmación, recibo) para que todos los consulten.</p>
     </div>
     <div class="stays" id="stays"></div>
   </section>
@@ -333,10 +347,18 @@
       <h2>Pendientes</h2>
     </div>
     <div class="prog"><div class="prog-bar"><i id="progBar"></i></div><span id="progTxt">0 de 10 listos</span></div>
-    <ul class="todo" id="todo">
-      <li><label class="card"><input type="checkbox" id="t-rsvp"><span class="t">Confirmar asistencia a la boda<small>Cada quien desde su invitación</small></span><span class="due" data-due="2026-12-01" data-label="1 dic"></span></label></li>
-      <li><label class="card"><input type="checkbox" id="t-vuelos"><span class="t">Comprar vuelos<small>MEX ⇄ MID, 25 feb – 2 mar</small></span><span class="due" data-due="2026-12-10" data-label="10 dic"></span></label></li>
-      <li><label class="card"><input type="checkbox" id="t-cabana"><span class="t">Reservar cabaña en la hacienda<small>Con el código de la invitación; solo hay 30 cabañas</small></span><span class="due" data-due="2027-01-26" data-label="26 ene"></span></label></li>
+    <div class="todo-groups" id="todo">
+      <div>
+        <h3 class="todo-h">Lo de cada quien <span>cada persona marca lo suyo</span></h3>
+        <ul class="todo">
+      <li><label class="card" data-personal><input type="checkbox" id="t-rsvp"><span class="t">Confirmar asistencia a la boda<small>Cada quien desde su invitación</small></span><span class="due" data-due="2026-12-01" data-label="1 dic"></span></label></li>
+      <li><label class="card" data-personal><input type="checkbox" id="t-vuelos"><span class="t">Comprar vuelos<small>MEX ⇄ MID, 25 feb – 2 mar</small></span><span class="due" data-due="2026-12-10" data-label="10 dic"></span></label></li>
+      <li><label class="card" data-personal><input type="checkbox" id="t-cabana"><span class="t">Reservar cabaña en la hacienda<small>Con el código de la invitación; solo hay 30 cabañas</small></span><span class="due" data-due="2027-01-26" data-label="26 ene"></span></label></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="todo-h">Lo del grupo <span>con que uno lo marque, queda para todos</span></h3>
+        <ul class="todo">
       <li><label class="card"><input type="checkbox" id="t-camioneta"><span class="t">Reservar la camioneta<small>9 personas, 6 días</small></span></label></li>
       <li><label class="card"><input type="checkbox" id="t-airbnb1"><span class="t">Reservar Airbnb en Chuburná<small>Noches del 27 y 28 de febrero</small></span></label></li>
       <li><label class="card"><input type="checkbox" id="t-airbnb2"><span class="t">Reservar Airbnb en Mérida<small>Noche del 1 de marzo</small></span></label></li>
@@ -344,9 +366,11 @@
       <li><label class="card"><input type="checkbox" id="t-cenotes"><span class="t">Elegir cenotes<small>Jorge investiga</small></span></label></li>
       <li><label class="card"><input type="checkbox" id="t-rutas"><span class="t">Rutas<small>Hacienda → Chuburná → Mérida → aeropuerto</small></span></label></li>
       <li><label class="card"><input type="checkbox" id="t-recos"><span class="t">Recomendaciones<small>Dónde comer y qué no perderse</small></span></label></li>
-    </ul>
+        </ul>
+      </div>
+    </div>
     <p class="fine" id="todoNote">Las palomitas se guardan solo en este dispositivo. <button class="link" type="button" data-join>Entra con el código del grupo</button> para compartirlas con todos.</p>
-    <p class="fine" id="todoSync" hidden>Sincronizado con el grupo: lo que marques lo ven todos al momento.</p>
+    <p class="fine" id="todoSync" hidden>Sincronizado con el grupo. En lo de cada quien solo cambia tu palomita y se ve cuántos van.</p>
   </section>
 
   <section class="sec" id="costos">
@@ -400,6 +424,14 @@
           <div><h3>Para quedar a mano</h3><ul class="pay" id="exPay"></ul></div>
         </div>
       </div>
+    </div>
+    <div class="card splitter only-in rise" id="splitter">
+      <div class="ledger-head">
+        <div><p class="eyebrow">Dividir una cuenta</p><h3>Cada quien paga lo que consumió</h3></div>
+        <button class="btn hot" id="tkAdd" type="button">Nueva cuenta</button>
+      </div>
+      <p class="fine">Sube la foto del ticket para que se lean los renglones, o captúralos a mano. Después cada quien toca su inicial en lo que pidió, y al final la cuenta pasa a gastos con el monto exacto de cada uno.</p>
+      <div id="tickets"></div>
     </div>
   </section>
 
@@ -471,12 +503,12 @@
 <dialog class="dlg" id="dlgStay" aria-labelledby="stT">
   <form id="stForm">
     <h3 id="stT">Hospedaje</h3>
-    <label class="fld" for="stName">Nombre del lugar<input id="stName" type="text" maxlength="80" autocomplete="off"></label>
+    <label class="fld" for="stName"><span id="stNameL">Nombre del lugar</span><input id="stName" type="text" maxlength="80" autocomplete="off"></label>
     <label class="fld" for="stUrl">Enlace del anuncio o la reserva<input id="stUrl" type="url" maxlength="500" placeholder="https://…" autocomplete="off"></label>
     <label class="fld" for="stAddr">Dirección<input id="stAddr" type="text" maxlength="200" autocomplete="off"></label>
     <div class="row">
-      <label class="fld" for="stIn">Check-in<input id="stIn" type="time"></label>
-      <label class="fld" for="stOut">Check-out<input id="stOut" type="time"></label>
+      <label class="fld" for="stIn"><span id="stInL">Check-in</span><input id="stIn" type="time"></label>
+      <label class="fld" for="stOut"><span id="stOutL">Check-out</span><input id="stOut" type="time"></label>
     </div>
     <div class="row">
       <label class="fld" for="stTotal">Costo total (MXN)<input id="stTotal" type="number" inputmode="decimal" min="0" step="0.01"></label>
@@ -488,6 +520,20 @@
   </form>
 </dialog>
 
+<dialog class="dlg" id="dlgTk" aria-labelledby="tkT">
+  <form id="tkForm">
+    <h3 id="tkT">Nueva cuenta</h3>
+    <label class="fld" for="tkTitle">Qué fue<input id="tkTitle" type="text" maxlength="80" placeholder="Cena del sábado, bar de la playa…" autocomplete="off" required></label>
+    <label class="fld" for="tkPaid">Pagó<select id="tkPaid"></select></label>
+    <label class="fld" for="tkPhoto">Foto del ticket (opcional)<input id="tkPhoto" type="file" accept="image/*"></label>
+    <p>Con foto, los renglones se leen solos y tú los revisas. Sin foto, los capturas a mano.</p>
+    <p class="err" id="tkErr" hidden></p>
+    <div class="dlg-actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit" id="tkGo">Crear cuenta</button></div>
+  </form>
+</dialog>
+
+<input id="docFile" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic" hidden>
+
 <div id="toast" role="status" aria-live="polite"></div>
 
 <footer><div class="wrap"><span>Mérida, Yucatán · 25 feb – 2 mar 2027</span><span class="mono">20.97° N · 89.62° O</span></div></footer>
@@ -496,5 +542,8 @@
 <script src="assets/config.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/grupo.js"></script>
+<script src="assets/avisos.js"></script>
+<script src="assets/docs.js"></script>
+<script src="assets/cuentas.js"></script>
 </body>
 </html>
