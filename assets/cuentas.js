@@ -55,12 +55,34 @@
         '<ul class="tk-items">' + (rows || '<li class="empty">Agrega los renglones del ticket.</li>') + '</ul>' +
         '<form class="tk-add" data-tk-add="' + esc(t.id) + '"><input name="name" type="text" maxlength="80" placeholder="Renglón" aria-label="Nombre del renglón" required>' +
         '<input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="$" aria-label="Importe" required><button class="btn" type="submit">Agregar</button></form>' +
+        '<details class="tk-paste"><summary>Pegar varios renglones</summary>' +
+        '<p>Un renglón por línea, con el importe al final. Sirve para pegar lo que lea de la foto la app de Claude o cualquier otra: pídele justo esto.</p>' +
+        '<p class="tk-ask" data-ask>' + ASK + '</p><button class="btn" type="button" data-copy-ask>Copiar instrucción</button>' +
+        '<textarea rows="5" placeholder="Cochinita 180&#10;2 Cerveza 100&#10;Propina 40" aria-label="Renglones para pegar"></textarea>' +
+        '<button class="btn" type="button" data-tk-paste="' + esc(t.id) + '">Agregar renglones</button></details>' +
         '<label class="tk-tip">Propina<input type="number" inputmode="decimal" min="0" step="0.01" value="' + (Number(t.tip) || '') + '" placeholder="0" data-tk-tip="' + esc(t.id) + '"></label>' +
         (totals ? '<ul class="tk-totals">' + totals + '</ul>' : '') +
         (c.unassigned ? '<p class="tk-warn">Faltan ' + money(c.unassigned) + ' por asignar: toca quién pidió cada renglón.</p>' : '') +
         '<button class="btn hot" type="button" data-tk-close="' + esc(t.id) + '"' + (c.unassigned || !c.items.length ? ' disabled' : '') + '>Pasar a gastos</button>' +
         '</article>';
     }).join('') : '<p class="empty">Todavía no hay cuentas por dividir.</p>';
+  }
+
+  // Convierte texto pegado en renglones: "Cochinita 180", "2 Cerveza $100.00", "Propina 40".
+  var ASK = 'Lee este ticket y dame un renglón por línea con el formato: nombre importe. Sin subtotal, IVA ni total. Si hay propina, ponla en una línea que diga Propina.';
+  function parseLines(text) {
+    var items = [], tip = null;
+    String(text).split(/\r?\n/).forEach(function (line) {
+      line = line.replace(/^[\s|*\-•·]+|[\s|]+$/g, '');
+      var m = line.match(/^(.*?)[\s:.\-|$]*\$?\s*(\d{1,3}(?:,\d{3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)$/);
+      if (!m) return;
+      var name = m[1].replace(/[\s:.\-|$]+$/, '').trim(), amount = Number(m[2].replace(/,/g, ''));
+      if (!name || !(amount > 0)) return;
+      if (/^(sub\s?total|total|i\.?v\.?a\.?|cambio|efectivo|tarjeta|importe|su pago|pago)\b/i.test(name)) return;
+      if (/^(propina|servicio)\b/i.test(name)) { tip = amount; return; }
+      items.push({ name: name.slice(0, 80), amount: Math.round(amount * 100) / 100 });
+    });
+    return { items: items, tip: tip };
   }
 
   var timer;
@@ -74,7 +96,7 @@
     // No repintar mientras alguien escribe un renglón o la propina: perdería lo tecleado.
     var a = document.activeElement;
     T.S.tickets = r[0].data; T.S.items = r[1].data; T.S.claims = r[2].data;
-    if (a && a.closest && a.closest('#tickets') && /INPUT/.test(a.tagName) && a.value) return;
+    if (a && a.closest && a.closest('#tickets') && /INPUT|TEXTAREA/.test(a.tagName) && a.value) return;
     paint();
   }
   var soon = function () { clearTimeout(timer); timer = setTimeout(reload, 120); };
@@ -128,6 +150,24 @@
       return;
     }
     if ((b = t.closest('[data-tk-close]'))) return closeTicket(b.getAttribute('data-tk-close'), b);
+    if ((b = t.closest('[data-copy-ask]'))) {
+      try { await navigator.clipboard.writeText(ASK); T.toast('Instrucción copiada.'); }
+      catch (err) { var el = b.parentNode.querySelector('[data-ask]'), sel = getSelection(), rg = document.createRange(); rg.selectNodeContents(el); sel.removeAllRanges(); sel.addRange(rg); T.toast('Mantén presionado el texto para copiarlo.'); }
+      return;
+    }
+    if ((b = t.closest('[data-tk-paste]'))) {
+      var pid = b.getAttribute('data-tk-paste'), box = b.parentNode.querySelector('textarea'), got = parseLines(box.value);
+      if (!got.items.length && got.tip == null) return T.toast('No encontré renglones: cada línea debe terminar con su importe.');
+      var base = T.S.items.filter(function (i) { return i.ticket_id === pid; }).length;
+      var newRows = got.items.map(function (i, n) { return { id: uuid(), ticket_id: pid, name: i.name, amount: i.amount, sort: base + n }; });
+      var tk = T.S.tickets.filter(function (x) { return x.id === pid; })[0];
+      T.S.items = T.S.items.concat(newRows); if (got.tip != null) tk.tip = got.tip;
+      box.value = ''; paint();
+      var res = newRows.length ? await T.sb.from('ticket_items').insert(newRows) : { error: null };
+      if (!res.error && got.tip != null) res = await T.sb.from('tickets').update({ tip: got.tip }).eq('id', pid);
+      if (res.error) return failed();
+      T.toast('Agregué ' + newRows.length + (newRows.length === 1 ? ' renglón' : ' renglones') + (got.tip != null ? ' y la propina.' : '.'));
+    }
   });
 
   // Agregar un renglón a mano.

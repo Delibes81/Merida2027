@@ -430,7 +430,7 @@
         <div><p class="eyebrow">Dividir una cuenta</p><h3>Cada quien paga lo que consumió</h3></div>
         <button class="btn hot" id="tkAdd" type="button">Nueva cuenta</button>
       </div>
-      <p class="fine">Sube la foto del ticket para que se lean los renglones, o captúralos a mano. Después cada quien toca su inicial en lo que pidió, y al final la cuenta pasa a gastos con el monto exacto de cada uno.</p>
+      <p class="fine">Captura los renglones del ticket a mano o pégalos de un jalón. Después cada quien toca su inicial en lo que pidió, y al final la cuenta pasa a gastos con el monto exacto de cada uno.</p>
       <div id="tickets"></div>
     </div>
   </section>
@@ -526,7 +526,7 @@
     <label class="fld" for="tkTitle">Qué fue<input id="tkTitle" type="text" maxlength="80" placeholder="Cena del sábado, bar de la playa…" autocomplete="off" required></label>
     <label class="fld" for="tkPaid">Pagó<select id="tkPaid"></select></label>
     <label class="fld" for="tkPhoto">Foto del ticket (opcional)<input id="tkPhoto" type="file" accept="image/*"></label>
-    <p>Con foto, los renglones se leen solos y tú los revisas. Sin foto, los capturas a mano.</p>
+    <p>La lectura automática de la foto solo funciona si está activada en el servidor. Sin foto, capturas o pegas los renglones.</p>
     <p class="err" id="tkErr" hidden></p>
     <div class="dlg-actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit" id="tkGo">Crear cuenta</button></div>
   </form>
