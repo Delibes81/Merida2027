@@ -1,12 +1,15 @@
-// Dividir una cuenta por consumo: renglones del ticket (leídos de la foto o capturados
-// a mano), cada quien marca lo que pidió y al cerrar pasa a gastos con montos exactos.
+// Dividir una cuenta: una sesión compartida donde cada quien marca lo que pidió y avisa
+// cuando pagó su parte. La página lleva la suma para que no falte nada por asignar ni por pagar.
+// Si alguien pagó todo, la cuenta puede pasar a gastos con el monto exacto de cada uno.
 (function () {
   'use strict';
   var T = window.Trip, $ = T.$, all = T.all, esc = T.esc, money = T.money;
   var M = T.MEMBERS;
-  T.S.tickets = []; T.S.items = []; T.S.claims = [];
+  T.S.tickets = []; T.S.items = []; T.S.claims = []; T.S.payments = [];
   var cents = function (n) { return Math.round(Number(n) * 100); };
   var uuid = function () { return crypto.randomUUID ? crypto.randomUUID() : 'x' + Date.now() + Math.random().toString(16).slice(2); };
+  var find = function (id) { return T.S.tickets.filter(function (x) { return x.id === id; })[0]; };
+  var names = function (ids) { return ids.map(function (id) { return T.byId[id].name; }).join(', '); };
 
   // Cuánto le toca a cada quien, en centavos. Un renglón se reparte parejo entre quienes
   // lo marcaron; la propina, en proporción a lo que consumió cada uno.
@@ -30,29 +33,71 @@
     // Los centavos sobrantes de la propina van a quienes quedaron más cerca del siguiente centavo.
     rest.sort(function (x, y) { return y[1] - x[1]; });
     for (var n = 0; n < tip - given && rest.length; n++) total[rest[n % rest.length][0]] += 1;
-    return { items: items, total: total, ids: ids, unassigned: unassigned, itemsTotal: itemsTotal, tip: tip };
+
+    // Pagos avisados: cuánto dijo cada quien que pagó, contra lo que le toca ahora.
+    var paid = {}, paidTotal = 0, owing = [], owed = 0, over = 0;
+    T.S.payments.forEach(function (p) { if (p.ticket_id === t.id && T.byId[p.member_id]) { paid[p.member_id] = cents(p.amount); paidTotal += cents(p.amount); } });
+    M.forEach(function (m) {
+      var d = (total[m.id] || 0) - (paid[m.id] || 0);
+      if (d > 0) { owed += d; owing.push(m.id); } else over -= d;
+    });
+    var people = M.map(function (m) { return m.id; }).filter(function (id) { return total[id] || paid[id]; });
+    return { items: items, total: total, ids: ids, people: people, unassigned: unassigned, itemsTotal: itemsTotal, tip: tip, grand: itemsTotal + tip,
+      paid: paid, paidTotal: paidTotal, owing: owing, owed: owed, over: over, complete: items.length > 0 && !unassigned && !owed && !over };
+  }
+
+  function statusHtml(t, c) {
+    var lines = [];
+    if (!c.items.length) lines.push('<p>Agrega los renglones del ticket para empezar.</p>');
+    if (c.unassigned) lines.push('<p class="warn">Faltan ' + money(c.unassigned) + ' por asignar: toca quién pidió cada renglón.</p>');
+    if (t.paid_by) {
+      if (c.items.length && !c.unassigned) lines.push('<p class="ok">Todo asignado. Ya puede pasar a gastos.</p>');
+      return '<div class="tk-status">' + lines.join('') + '</div>';
+    }
+    if (c.owed) lines.push('<p class="warn">Faltan ' + money(c.owed) + ' por pagar: ' + esc(names(c.owing)) + '.</p>');
+    if (c.over) lines.push('<p class="warn">Hay ' + money(c.over) + ' pagados de más: revisen los renglones marcados.</p>');
+    if (c.complete) lines.push('<p class="ok">Cuenta completa: todo está asignado y pagado.</p>');
+    var pct = c.grand ? Math.min(100, Math.round(100 * c.paidTotal / c.grand)) : 0;
+    return '<div class="tk-status"><div class="tk-bar"><i style="width: ' + pct + '%"></i></div>' +
+      '<p class="tk-sum"><b>' + money(c.paidTotal) + '</b> pagados de <b>' + money(c.grand) + '</b></p>' + lines.join('') + '</div>';
+  }
+
+  function peopleHtml(t, c) {
+    if (!c.people.length) return '';
+    return '<div class="tk-people"><p class="eyebrow">' + (t.paid_by ? 'Lo que le toca a cada quien' : 'Lo que paga cada quien') + '</p><ul>' + c.people.map(function (id) {
+      var due = c.total[id] || 0, paid = c.paid[id], has = paid != null, note = '';
+      if (has && paid < due) note = '<small class="warn">pagó ' + money(paid) + ', le faltan ' + money(due - paid) + '</small>';
+      else if (has && paid > due) note = '<small class="warn">pagó ' + money(paid) + ', ' + money(paid - due) + ' de más</small>';
+      return '<li><span class="who">' + esc(T.byId[id].name) + note + '</span><span class="amt">' + money(due) + '</span>' +
+        (t.paid_by ? '' : '<button type="button" class="vote" aria-pressed="' + has + '" data-pay="' + esc(t.id) + '|' + id + '">' + (has ? '✓ Pagó' : 'Ya pagó') + '</button>') + '</li>';
+    }).join('') + '</ul></div>';
   }
 
   function paint() {
     if (!T.me) { $('tickets').innerHTML = ''; return; }
+    var open = all('#tickets details[open]').map(function (d) { return d.closest('[data-tk]').getAttribute('data-tk'); });
     $('tickets').innerHTML = T.S.tickets.length ? T.S.tickets.map(function (t) {
-      var c = compute(t), payer = T.byId[t.paid_by], grand = c.itemsTotal + c.tip;
-      var head = '<header><div><b>' + esc(t.title) + '</b><small>Pagó ' + esc(payer ? payer.name : '?') + ' · ' + money(grand) + '</small></div>' +
-        (t.expense_id ? '<span class="pill">En gastos</span>' : (t.created_by === T.me.id ? '<button class="icon-btn" type="button" data-tk-del="' + esc(t.id) + '" aria-label="Borrar ' + esc(t.title) + '">' + T.TRASH + '</button>' : '')) + '</header>';
-      if (t.expense_id) return '<article class="tk closed">' + head + '</article>';
+      var c = compute(t), payer = T.byId[t.paid_by], mine = t.created_by === T.me.id;
+      var sub = (payer ? 'Pagó ' + esc(payer.name) : 'Cada quien paga lo suyo') + ' · ' + money(c.grand);
+      if (t.expense_id || t.closed) {
+        return '<article class="tk closed" data-tk="' + esc(t.id) + '"><header><div><b>' + esc(t.title) + '</b><small>' + sub + '</small></div>' +
+          '<span class="pill">' + (t.expense_id ? 'En gastos' : 'Saldada') + '</span>' +
+          (t.closed && !t.expense_id ? '<button class="btn" type="button" data-tk-open="' + esc(t.id) + '">Reabrir</button>' : '') + '</header></article>';
+      }
       var rows = c.items.map(function (i) {
-        var mine = function (m) { return T.S.claims.some(function (k) { return k.item_id === i.id && k.member_id === m.id; }); };
+        var has = function (m) { return T.S.claims.some(function (k) { return k.item_id === i.id && k.member_id === m.id; }); };
         return '<li><div class="tk-row"><span class="tk-name">' + esc(i.name) + '</span><span class="amt">' + money(cents(i.amount)) + '</span>' +
           '<button class="icon-btn" type="button" data-item-del="' + esc(i.id) + '" aria-label="Quitar ' + esc(i.name) + '">' + T.TRASH + '</button></div>' +
           '<div class="tk-who">' + M.map(function (m) {
-            return '<button type="button" class="pick" style="--h: ' + m.h + '" aria-pressed="' + mine(m) + '" data-pick="' + esc(i.id) + '|' + m.id + '" title="' + esc(m.name) + '" aria-label="' + esc(m.name) + ' pidió ' + esc(i.name) + '">' + esc(m.name.slice(0, 2)) + '</button>';
+            return '<button type="button" class="pick" style="--h: ' + m.h + '" aria-pressed="' + has(m) + '" data-pick="' + esc(i.id) + '|' + m.id + '" title="' + esc(m.name) + '" aria-label="' + esc(m.name) + ' pidió ' + esc(i.name) + '">' + esc(m.name.slice(0, 2)) + '</button>';
           }).join('') + '<button type="button" class="vote" data-pick-all="' + esc(i.id) + '">Todos</button></div></li>';
       }).join('');
-      var totals = c.ids.map(function (id) {
-        return '<li><span>' + esc(T.byId[id].name) + '</span><span>' + money(c.total[id]) + '</span></li>';
-      }).join('');
-      return '<article class="tk" data-tk="' + esc(t.id) + '">' + head +
-        '<ul class="tk-items">' + (rows || '<li class="empty">Agrega los renglones del ticket.</li>') + '</ul>' +
+      return '<article class="tk" data-tk="' + esc(t.id) + '">' +
+        '<header><div><b>' + esc(t.title) + '</b><small>' + sub + '</small></div><div class="tk-tools">' +
+          '<button class="btn" type="button" data-tk-share="' + esc(t.id) + '">Compartir</button>' +
+          (mine ? '<button class="icon-btn" type="button" data-tk-del="' + esc(t.id) + '" aria-label="Borrar ' + esc(t.title) + '">' + T.TRASH + '</button>' : '') + '</div></header>' +
+        statusHtml(t, c) +
+        '<ul class="tk-items">' + rows + '</ul>' +
         '<form class="tk-add" data-tk-add="' + esc(t.id) + '"><input name="name" type="text" maxlength="80" placeholder="Renglón" aria-label="Nombre del renglón" required>' +
         '<input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" placeholder="$" aria-label="Importe" required><button class="btn" type="submit">Agregar</button></form>' +
         '<details class="tk-paste"><summary>Pegar varios renglones</summary>' +
@@ -61,12 +106,29 @@
         '<textarea rows="5" placeholder="Cochinita 180 @Jorge&#10;2 Cerveza 100&#10;Nachos 220 @todos&#10;Propina 40" aria-label="Renglones para pegar"></textarea>' +
         '<button class="btn" type="button" data-tk-paste="' + esc(t.id) + '">Agregar renglones</button></details>' +
         '<label class="tk-tip">Propina<input type="number" inputmode="decimal" min="0" step="0.01" value="' + (Number(t.tip) || '') + '" placeholder="0" data-tk-tip="' + esc(t.id) + '"></label>' +
-        (totals ? '<ul class="tk-totals">' + totals + '</ul>' : '') +
-        (c.unassigned ? '<p class="tk-warn">Faltan ' + money(c.unassigned) + ' por asignar: toca quién pidió cada renglón.</p>' : '') +
-        '<button class="btn hot" type="button" data-tk-close="' + esc(t.id) + '"' + (c.unassigned || !c.items.length ? ' disabled' : '') + '>Pasar a gastos</button>' +
+        peopleHtml(t, c) +
+        '<label class="tk-tip tk-mode">Cómo se paga<select data-tk-payer="' + esc(t.id) + '"><option value="">Cada quien paga lo suyo</option>' +
+          M.map(function (m) { return '<option value="' + m.id + '"' + (t.paid_by === m.id ? ' selected' : '') + '>Pagó ' + esc(m.name) + ' y se le repone</option>'; }).join('') + '</select></label>' +
+        (t.paid_by
+          ? '<button class="btn hot" type="button" data-tk-close="' + esc(t.id) + '"' + (c.unassigned || !c.items.length ? ' disabled' : '') + '>Pasar a gastos</button>'
+          : '<button class="btn hot" type="button" data-tk-done="' + esc(t.id) + '"' + (c.complete ? '' : ' disabled') + '>Cerrar cuenta</button>') +
         '</article>';
     }).join('') : '<p class="empty">Todavía no hay cuentas por dividir.</p>';
+    open.forEach(function (id) { var d = document.querySelector('[data-tk="' + id + '"] details'); if (d) d.open = true; });
+    focusLinked();
   }
+
+  // Enlace directo a una cuenta: ?cuenta=<id> lleva a ella en cuanto carga.
+  var linked = null, focused = false;
+  try { linked = new URLSearchParams(location.search).get('cuenta'); } catch (e) {}
+  function focusLinked() {
+    if (!linked || focused) return;
+    var el = document.querySelector('[data-tk="' + linked.replace(/[^\w-]/g, '') + '"]');
+    if (!el) return;
+    focused = true; el.classList.add('focus');
+    setTimeout(function () { el.scrollIntoView({ block: 'start' }); }, 300);
+  }
+  if (linked) setTimeout(function () { if (!T.me) T.openJoin(); }, 2500);
 
   // Convierte texto pegado en renglones: "Cochinita 180", "2 Cerveza $100.00", "Propina 40".
   // Opcional, quién lo pidió: "Nachos 220 @Jorge, Zamy" o "@todos". Formato completo en docs/agente-tickets.md.
@@ -104,19 +166,20 @@
     var r = await Promise.all([
       T.sb.from('tickets').select('*').order('created_at', { ascending: false }),
       T.sb.from('ticket_items').select('*').order('sort', { ascending: true }),
-      T.sb.from('ticket_claims').select('*')
+      T.sb.from('ticket_claims').select('*'),
+      T.sb.from('ticket_payments').select('*')
     ]);
     if (r[0].error || r[1].error || r[2].error) return;
+    T.S.tickets = r[0].data; T.S.items = r[1].data; T.S.claims = r[2].data; T.S.payments = r[3].error ? [] : r[3].data;
     // No repintar mientras alguien escribe un renglón o la propina: perdería lo tecleado.
     var a = document.activeElement;
-    T.S.tickets = r[0].data; T.S.items = r[1].data; T.S.claims = r[2].data;
     if (a && a.closest && a.closest('#tickets') && /INPUT|TEXTAREA/.test(a.tagName) && a.value) return;
     paint();
   }
   var soon = function () { clearTimeout(timer); timer = setTimeout(reload, 120); };
-  T.load.tickets = reload; T.load.ticket_items = soon; T.load.ticket_claims = soon;
+  T.load.tickets = reload; T.load.ticket_items = soon; T.load.ticket_claims = soon; T.load.ticket_payments = soon;
   T.painters.push(paint);
-  T.resets.push(function () { T.S.tickets = []; T.S.items = []; T.S.claims = []; });
+  T.resets.push(function () { T.S.tickets = []; T.S.items = []; T.S.claims = []; T.S.payments = []; });
   var failed = function () { T.toast('No se pudo guardar. Intenta de nuevo.'); reload(); };
 
   // ── Marcar quién pidió qué ──
@@ -130,12 +193,42 @@
     if (r.error) failed();
   }
 
+  // ── Avisar que alguien ya pagó su parte (se guarda cuánto pagó en ese momento) ──
+  async function togglePay(tid, member) {
+    var t = find(tid), c = compute(t), has = c.paid[member] != null, r;
+    T.S.payments = T.S.payments.filter(function (p) { return !(p.ticket_id === tid && p.member_id === member); });
+    if (has) {
+      paint();
+      r = await T.sb.from('ticket_payments').delete().eq('ticket_id', tid).eq('member_id', member);
+    } else {
+      var row = { ticket_id: tid, member_id: member, amount: (c.total[member] || 0) / 100 };
+      T.S.payments = T.S.payments.concat([row]); paint();
+      r = await T.sb.from('ticket_payments').insert(row);
+    }
+    if (r.error) return failed();
+    if (!has && compute(t).complete) T.toast('Cuenta completa: todo está asignado y pagado.');
+  }
+
+  async function share(tid) {
+    var t = find(tid), url = location.origin + '/?cuenta=' + tid;
+    var text = 'Cuenta "' + t.title + '": entra y marca lo que pediste.';
+    try {
+      if (navigator.share) return await navigator.share({ title: t.title, text: text, url: url });
+      await navigator.clipboard.writeText(text + ' ' + url); T.toast('Enlace copiado. Pégalo en el chat del grupo.');
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+      T.toast('Comparte este enlace: ' + url);
+    }
+  }
+
   document.addEventListener('click', async function (e) {
     var t = e.target, b;
     if ((b = t.closest('[data-pick]'))) {
       var p = b.getAttribute('data-pick').split('|');
       return setClaim(p[0], p[1], b.getAttribute('aria-pressed') !== 'true');
     }
+    if ((b = t.closest('[data-pay]'))) { var pp = b.getAttribute('data-pay').split('|'); return togglePay(pp[0], pp[1]); }
+    if ((b = t.closest('[data-tk-share]'))) return share(b.getAttribute('data-tk-share'));
     if ((b = t.closest('[data-pick-all]'))) {
       var item = b.getAttribute('data-pick-all');
       var has = T.S.claims.filter(function (k) { return k.item_id === item; }).map(function (k) { return k.member_id; });
@@ -163,6 +256,12 @@
       if ((await T.sb.from('tickets').delete().eq('id', tid)).error) failed(); else T.toast('Cuenta borrada.');
       return;
     }
+    if ((b = t.closest('[data-tk-done]')) || (b = t.closest('[data-tk-open]'))) {
+      var done = b.hasAttribute('data-tk-done'), did = b.getAttribute(done ? 'data-tk-done' : 'data-tk-open');
+      find(did).closed = done; paint();
+      if ((await T.sb.from('tickets').update({ closed: done }).eq('id', did)).error) return failed();
+      return T.toast(done ? 'Cuenta cerrada: quedó saldada.' : 'Cuenta reabierta.');
+    }
     if ((b = t.closest('[data-tk-close]'))) return closeTicket(b.getAttribute('data-tk-close'), b);
     if ((b = t.closest('[data-copy-ask]'))) {
       try { await navigator.clipboard.writeText(ASK); T.toast('Instrucción copiada.'); }
@@ -176,8 +275,7 @@
       var newRows = got.items.map(function (i, n) { return { id: uuid(), ticket_id: pid, name: i.name, amount: i.amount, sort: base + n }; });
       var newClaims = [];
       got.items.forEach(function (i, n) { i.who.forEach(function (mid) { newClaims.push({ item_id: newRows[n].id, member_id: mid }); }); });
-      var tk = T.S.tickets.filter(function (x) { return x.id === pid; })[0];
-      T.S.items = T.S.items.concat(newRows); T.S.claims = T.S.claims.concat(newClaims); if (got.tip != null) tk.tip = got.tip;
+      T.S.items = T.S.items.concat(newRows); T.S.claims = T.S.claims.concat(newClaims); if (got.tip != null) find(pid).tip = got.tip;
       box.value = ''; paint();
       var res = newRows.length ? await T.sb.from('ticket_items').insert(newRows) : { error: null };
       if (!res.error && newClaims.length) res = await T.sb.from('ticket_claims').insert(newClaims);
@@ -202,23 +300,28 @@
     if ((await T.sb.from('ticket_items').insert(row)).error) failed();
   });
 
-  // Propina.
+  // Propina y forma de pago.
   document.addEventListener('change', async function (e) {
-    var i = e.target.closest('[data-tk-tip]');
-    if (!i) return;
-    var t = T.S.tickets.filter(function (x) { return x.id === i.getAttribute('data-tk-tip'); })[0];
-    t.tip = Math.max(0, Math.round(Number(i.value) * 100) / 100) || 0; paint();
-    if ((await T.sb.from('tickets').update({ tip: t.tip }).eq('id', t.id)).error) failed();
+    var i = e.target.closest('[data-tk-tip]'), s = e.target.closest('[data-tk-payer]'), t;
+    if (i) {
+      t = find(i.getAttribute('data-tk-tip'));
+      t.tip = Math.max(0, Math.round(Number(i.value) * 100) / 100) || 0; paint();
+      if ((await T.sb.from('tickets').update({ tip: t.tip }).eq('id', t.id)).error) failed();
+    } else if (s) {
+      t = find(s.getAttribute('data-tk-payer'));
+      t.paid_by = s.value || null; paint();
+      if ((await T.sb.from('tickets').update({ paid_by: t.paid_by }).eq('id', t.id)).error) failed();
+    }
   });
 
-  // Cerrar: crea un gasto con el monto exacto de cada quien y liga la cuenta a él.
+  // Si alguien pagó todo: crea un gasto con el monto exacto de cada quien y liga la cuenta a él.
   async function closeTicket(id, btn) {
-    var t = T.S.tickets.filter(function (x) { return x.id === id; })[0], c = compute(t);
-    if (c.unassigned || !c.ids.length) return;
+    var t = find(id), c = compute(t);
+    if (c.unassigned || !c.ids.length || !t.paid_by) return;
     btn.disabled = true;
     var shares = {};
     c.ids.forEach(function (m) { shares[m] = c.total[m] / 100; });
-    var ex = { id: uuid(), concept: t.title, amount: (c.itemsTotal + c.tip) / 100, paid_by: t.paid_by, split: c.ids, shares: shares, created_by: T.me.id };
+    var ex = { id: uuid(), concept: t.title, amount: c.grand / 100, paid_by: t.paid_by, split: c.ids, shares: shares, created_by: T.me.id };
     var r = await T.sb.from('expenses').insert(ex);
     if (r.error) { btn.disabled = false; return T.toast('No se pudo pasar a gastos. Intenta de nuevo.'); }
     r = await T.sb.from('tickets').update({ expense_id: ex.id }).eq('id', id);
@@ -228,10 +331,10 @@
   }
 
   // ── Nueva cuenta, con o sin foto ──
-  $('tkPaid').innerHTML = M.filter(function (m) { return m.adult; })
-    .map(function (m) { return '<option value="' + m.id + '">' + esc(m.name) + '</option>'; }).join('');
+  $('tkPaid').innerHTML = '<option value="">Cada quien paga lo suyo</option>' + M.filter(function (m) { return m.adult; })
+    .map(function (m) { return '<option value="' + m.id + '">Pagó ' + esc(m.name) + ' y se le repone</option>'; }).join('');
   $('tkAdd').addEventListener('click', function () {
-    $('tkForm').reset(); T.fail($('tkErr'), ''); $('tkPaid').value = T.me.id; $('tkGo').textContent = 'Crear cuenta';
+    $('tkForm').reset(); T.fail($('tkErr'), ''); $('tkPaid').value = ''; $('tkGo').textContent = 'Crear cuenta';
     T.open($('dlgTk'));
   });
 
@@ -263,12 +366,12 @@
     if (file) {
       $('tkGo').textContent = 'Leyendo el ticket…';
       try { read = await readPhoto(file); } catch (err) {
-        note = err && err.status === 501 ? 'La lectura de tickets todavía no está activada; captura los renglones a mano.'
-          : err && err.status === 422 ? 'No se alcanzó a leer el ticket; captura los renglones a mano.'
-          : 'No se pudo leer la foto; captura los renglones a mano.';
+        note = err && err.status === 501 ? 'La lectura de tickets todavía no está activada; captura o pega los renglones.'
+          : err && err.status === 422 ? 'No se alcanzó a leer el ticket; captura o pega los renglones.'
+          : 'No se pudo leer la foto; captura o pega los renglones.';
       }
     }
-    var t = { id: uuid(), title: $('tkTitle').value.trim(), paid_by: $('tkPaid').value, tip: read ? read.tip : 0, created_by: T.me.id };
+    var t = { id: uuid(), title: $('tkTitle').value.trim(), paid_by: $('tkPaid').value || null, tip: read ? read.tip : 0, created_by: T.me.id };
     var r = await T.sb.from('tickets').insert(t);
     if (!r.error && read) {
       r = await T.sb.from('ticket_items').insert(read.items.map(function (i, n) {
@@ -284,6 +387,6 @@
         ? 'Leí ' + read.items.length + ' renglones, pero suman ' + money(sum) + ' y el ticket dice ' + money(cents(read.total)) + '. Revísalos.'
         : 'Leí ' + read.items.length + ' renglones. Revísalos y marquen lo suyo.';
     }
-    T.toast(note || 'Cuenta creada. Agrega los renglones.');
+    T.toast(note || 'Cuenta creada. Agrega los renglones y compártela con el grupo.');
   });
 })();

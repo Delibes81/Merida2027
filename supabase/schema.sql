@@ -301,8 +301,9 @@ alter table public.expenses add column if not exists shares jsonb;
 create table if not exists public.tickets (
   id         uuid primary key default gen_random_uuid(),
   title      text not null check (char_length(title) between 1 and 80),
-  paid_by    text not null references public.members (id),
+  paid_by    text references public.members (id),  -- vacío = cada quien paga lo suyo
   tip        numeric(10, 2) not null default 0 check (tip >= 0),
+  closed     boolean not null default false,       -- cuenta saldada
   expense_id uuid references public.expenses (id) on delete set null,  -- con gasto = cuenta cerrada
   created_by text not null references public.members (id),
   created_at timestamptz not null default now()
@@ -319,6 +320,23 @@ create table if not exists public.ticket_claims (
   member_id text not null references public.members (id),
   primary key (item_id, member_id)
 );
+
+-- Una cuenta puede no tener quien la pagó completa: cada quien paga lo suyo y avisa.
+alter table public.tickets alter column paid_by drop not null;
+alter table public.tickets add column if not exists closed boolean not null default false;
+create table if not exists public.ticket_payments (
+  ticket_id  uuid not null references public.tickets (id) on delete cascade,
+  member_id  text not null references public.members (id),
+  amount     numeric(10, 2) not null check (amount >= 0),  -- lo que pagó en ese momento
+  created_at timestamptz not null default now(),
+  primary key (ticket_id, member_id)
+);
+alter table public.ticket_payments enable row level security;
+revoke all on public.ticket_payments from anon;
+grant select, insert, delete on public.ticket_payments to authenticated;
+drop policy if exists ticket_payments_all on public.ticket_payments;
+create policy ticket_payments_all on public.ticket_payments for all to authenticated
+  using (public.my_member() is not null) with check (public.my_member() is not null);
 
 alter table public.todo_checks   enable row level security;
 alter table public.posts         enable row level security;
@@ -409,7 +427,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['todos', 'flights', 'expenses', 'rsvps', 'stays', 'todo_checks',
-                           'posts', 'docs', 'tickets', 'ticket_items', 'ticket_claims'] loop
+                           'posts', 'docs', 'tickets', 'ticket_items', 'ticket_claims', 'ticket_payments'] loop
     if not exists (
       select 1 from pg_publication_tables
       where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t

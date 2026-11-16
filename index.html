@@ -443,7 +443,7 @@
         <div><p class="eyebrow">Dividir una cuenta</p><h3>Cada quien paga lo que consumió</h3></div>
         <button class="btn hot" id="tkAdd" type="button">Nueva cuenta</button>
       </div>
-      <p class="fine">Captura los renglones del ticket a mano o pégalos de un jalón. Después cada quien toca su inicial en lo que pidió, y al final la cuenta pasa a gastos con el monto exacto de cada uno.</p>
+      <p class="fine">Crea la cuenta, agrega los renglones y compártela. Cada quien entra, marca lo que pidió y avisa cuando pagó su parte; la página lleva la suma para que no falte nada. Si alguien pagó todo, también puede pasar a gastos.</p>
       <div id="tickets"></div>
     </div>
   </section>
@@ -537,7 +537,7 @@
   <form id="tkForm">
     <h3 id="tkT">Nueva cuenta</h3>
     <label class="fld" for="tkTitle">Qué fue<input id="tkTitle" type="text" maxlength="80" placeholder="Cena del sábado, bar de la playa…" autocomplete="off" required></label>
-    <label class="fld" for="tkPaid">Pagó<select id="tkPaid"></select></label>
+    <label class="fld" for="tkPaid">Cómo se paga<select id="tkPaid"></select></label>
     <label class="fld" for="tkPhoto">Foto del ticket (opcional)<input id="tkPhoto" type="file" accept="image/*"></label>
     <p>La lectura automática de la foto solo funciona si está activada en el servidor. Sin foto, capturas o pegas los renglones.</p>
     <p class="err" id="tkErr" hidden></p>
