@@ -317,10 +317,16 @@
 
   // ── Grupo y vuelos ──
   var crewIntro = $('crewSum').innerHTML;
-  function flightLine(label, date, time, no, fallback) {
-    if (!time && !no) return '';
+  var hm = function (t) { return t ? String(t).slice(0, 5) : ''; };
+  // "09:50 → 11:35", o solo la hora que se tenga ("sale 09:50" / "llega 11:35").
+  function span(leave, land) {
+    if (leave && land) return hm(leave) + ' → ' + hm(land);
+    return leave ? 'sale ' + hm(leave) : land ? 'llega ' + hm(land) : '';
+  }
+  function flightLine(label, date, leave, land, no, fallback) {
+    if (!leave && !land && !no) return '';
     var parts = [label + ' ' + fmtDate(date || fallback)];
-    if (time) parts.push(String(time).slice(0, 5));
+    if (leave || land) parts.push(span(leave, land));
     if (no) parts.push(esc(no));
     return '<span class="p-fl has">' + parts.join(' · ') + '</span>';
   }
@@ -329,7 +335,7 @@
       var rows = MEMBERS.filter(function (m) { return m.hh === h.id; }).map(function (m) {
         var f = S.flights[m.id], lines = m.note ? '<span class="p-fl">' + esc(m.note) + '</span>' : '';
         if (me) {
-          var fl = f ? flightLine('Llega', f.arr_date, f.arr_time, f.arr_flight, m.arr || ARRIVAL) + flightLine('Sale', f.dep_date, f.dep_time, f.dep_flight, m.to || RETURN) : '';
+          var fl = f ? flightLine('Ida', f.arr_date, f.arr_leave, f.arr_time, f.arr_flight, m.arr || ARRIVAL) + flightLine('Regreso', f.dep_date, f.dep_time, f.dep_land, f.dep_flight, m.to || RETURN) : '';
           lines += fl || '<span class="p-fl">Sin vuelo capturado</span>';
         }
         return '<div class="person' + (me === m ? ' me' : '') + '">' + av(m) +
@@ -352,10 +358,12 @@
   function fillFlight(id) {
     var f = S.flights[id] || {};
     $('flArrDate').value = f.arr_date || byId[id].arr || ARRIVAL;
-    $('flArrTime').value = f.arr_time ? String(f.arr_time).slice(0, 5) : '';
+    $('flArrLeave').value = hm(f.arr_leave);
+    $('flArrTime').value = hm(f.arr_time);
     $('flArrNo').value = f.arr_flight || '';
     $('flDepDate').value = f.dep_date || byId[id].to || RETURN;
-    $('flDepTime').value = f.dep_time ? String(f.dep_time).slice(0, 5) : '';
+    $('flDepTime').value = hm(f.dep_time);
+    $('flDepLand').value = hm(f.dep_land);
     $('flDepNo').value = f.dep_flight || '';
   }
   // Al registrar un vuelo se puede aplicar a la pareja de una vez.
@@ -379,18 +387,25 @@
     var rows = who.map(function (id) {
       return {
         member_id: id,
-        arr_date: $('flArrDate').value || null, arr_time: $('flArrTime').value || null, arr_flight: $('flArrNo').value.trim().toUpperCase() || null,
-        dep_date: $('flDepDate').value || null, dep_time: $('flDepTime').value || null, dep_flight: $('flDepNo').value.trim().toUpperCase() || null,
+        arr_date: $('flArrDate').value || null, arr_leave: $('flArrLeave').value || null, arr_time: $('flArrTime').value || null, arr_flight: $('flArrNo').value.trim().toUpperCase() || null,
+        dep_date: $('flDepDate').value || null, dep_time: $('flDepTime').value || null, dep_land: $('flDepLand').value || null, dep_flight: $('flDepNo').value.trim().toUpperCase() || null,
         updated_by: me.id, updated_at: new Date().toISOString()
       };
     });
     var r = await sb.from('flights').upsert(rows);
+    // Si la base todavía no tiene las columnas nuevas, se guarda lo demás y se avisa.
+    var old = r.error && /arr_leave|dep_land/.test(r.error.message || '');
+    if (old) {
+      rows.forEach(function (row) { delete row.arr_leave; delete row.dep_land; });
+      r = await sb.from('flights').upsert(rows);
+    }
     busy(this, false);
     if (r.error) return fail($('flErr'), 'No se pudo guardar el vuelo. Intenta de nuevo.');
     rows.forEach(function (row) { S.flights[row.member_id] = row; });
     paintCrew(); paintFlights();
     close($('dlgFlight'));
-    toast(rows.length > 1 ? 'Vuelo guardado para ' + rows.length + ' personas.' : 'Vuelo de ' + byId[who[0]].name + ' guardado.');
+    toast(old ? 'Se guardó sin la hora de salida de la ida ni la de llegada del regreso: falta correr de nuevo supabase/schema.sql.'
+      : rows.length > 1 ? 'Vuelo guardado para ' + rows.length + ' personas.' : 'Vuelo de ' + byId[who[0]].name + ' guardado.');
   });
   $('flDel').addEventListener('click', async function () {
     var id = $('flWho').value, before = S.flights[id];
@@ -406,18 +421,22 @@
     MEMBERS.forEach(function (m) {
       var f = S.flights[m.id];
       if (!f) return;
-      var time = f[kind + '_time'] ? String(f[kind + '_time']).slice(0, 5) : '', no = f[kind + '_flight'] || '';
+      var time = hm(f[kind + '_time']), no = f[kind + '_flight'] || '';
+      // La otra punta del vuelo: a qué hora sale la ida y a qué hora llega el regreso.
+      var also = hm(f[kind === 'arr' ? 'arr_leave' : 'dep_land']);
       if (!time && !no) return;
       var date = f[kind + '_date'] || (kind === 'arr' ? m.arr || ARRIVAL : m.to || RETURN);
       var key = date + '|' + (time || '99:99') + '|' + no;
-      (groups[key] = groups[key] || { date: date, time: time, no: no, who: [] }).who.push(m);
+      var g = groups[key] = groups[key] || { date: date, time: time, no: no, who: [] };
+      g.also = g.also || also; g.who.push(m);
     });
     var keys = Object.keys(groups).sort();
     if (!keys.length) return '<li class="empty">' + (kind === 'arr' ? 'Todavía nadie registra su llegada.' : 'Todavía nadie registra su salida.') + '</li>';
     return keys.map(function (k) {
       var g = groups[k];
       return '<li><time class="b-time">' + (g.time || '--:--') + '</time><div class="b-main">' +
-        '<div class="b-top"><b>' + esc(g.no || 'Vuelo por definir') + '</b><span>' + fmtDate(g.date) + '</span></div>' +
+        '<div class="b-top"><b>' + esc(g.no || 'Vuelo por definir') + '</b><span>' + fmtDate(g.date) + '</span>' +
+        (g.also ? '<span class="b-also">' + (kind === 'arr' ? 'sale ' : 'llega ') + g.also + '</span>' : '') + '</div>' +
         '<div class="b-who"><span class="faces">' + g.who.map(av).join('') + '</span>' + esc(g.who.map(function (m) { return m.name; }).join(', ')) + '</div>' +
         '</div></li>';
     }).join('');

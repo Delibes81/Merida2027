@@ -52,6 +52,9 @@ create table if not exists public.flights (
   updated_by text references public.members (id),
   updated_at timestamptz not null default now()
 );
+-- Hora a la que despega el vuelo de ida y hora a la que aterriza el de regreso (hora local).
+alter table public.flights add column if not exists arr_leave time;
+alter table public.flights add column if not exists dep_land  time;
 
 -- Datos de cada hospedaje (anuncio, dirección, horarios, costo).
 create table if not exists public.stays (

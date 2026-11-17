@@ -446,6 +446,7 @@ body.joined .locked { display: none; }
 .board .b-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .board .b-top b { font: 500 16px var(--mono); }
 .board .b-top span { font-size: 13px; color: var(--muted); }
+.board .b-top .b-also { font-family: var(--mono); color: var(--fg); }
 .board .b-who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
 .board .faces .av { box-shadow: 0 0 0 2px var(--card); }
 .board .empty { display: block; }
@@ -598,6 +599,7 @@ body:not(.joined) .only-in { display: none; }
 .fld { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .fld input, .fld select { width: 100%; min-width: 0; padding: 11px 12px; font: 600 16px var(--body); letter-spacing: 0; text-transform: none; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; }
 .dlg .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
+.dlg fieldset .row + .row { margin-top: 10px; }
 .who { display: flex; flex-wrap: wrap; gap: 8px; }
 .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
 .who label { cursor: pointer; position: relative; }

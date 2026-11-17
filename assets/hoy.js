@@ -42,7 +42,8 @@
     var f = me && T.S.flights[me.id];
     if (f) {  // tu propio vuelo, si es hoy
       if (f.arr_time && (f.arr_date || me.arr || '2027-02-25') === today) events.push({ t: today + 'T' + String(f.arr_time).slice(0, 5), what: 'Tu vuelo llega a Mérida', where: f.arr_flight || '' });
-      if (f.dep_time && (f.dep_date || me.to || '2027-03-02') === today) events.push({ t: today + 'T' + String(f.dep_time).slice(0, 5), what: 'Tu vuelo sale de Mérida', where: f.dep_flight || '' });
+      if (f.arr_leave && (f.arr_date || me.arr || '2027-02-25') === today) events.push({ t: today + 'T' + String(f.arr_leave).slice(0, 5), what: 'Sale tu vuelo a Mérida', where: f.arr_flight || '' });
+      if (f.dep_time && (f.dep_date || me.to || '2027-03-02') === today) events.push({ t: today + 'T' + String(f.dep_time).slice(0, 5), what: 'Tu vuelo sale de Mérida', where: [f.dep_flight, f.dep_land && 'llega a las ' + String(f.dep_land).slice(0, 5)].filter(Boolean).join(' · ') });
     }
     events.sort(function (a, b) { return a.t < b.t ? -1 : 1; });
     var next = events.filter(function (e) { return at(e.t) > now; })[0];

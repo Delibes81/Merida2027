@@ -490,16 +490,21 @@
   <form id="flForm">
     <h3 id="flT">Vuelo</h3>
     <label class="fld" for="flWho">Persona<select id="flWho"></select></label>
-    <fieldset><legend>Llegada a Mérida</legend><div class="row">
+    <fieldset><legend>Ida a Mérida</legend><div class="row">
       <label class="fld" for="flArrDate">Fecha<input id="flArrDate" type="date"></label>
-      <label class="fld" for="flArrTime">Hora<input id="flArrTime" type="time"></label>
       <label class="fld" for="flArrNo">Vuelo<input id="flArrNo" type="text" maxlength="20" placeholder="AM 825" autocomplete="off"></label>
+    </div><div class="row">
+      <label class="fld" for="flArrLeave">Hora de salida<input id="flArrLeave" type="time"></label>
+      <label class="fld" for="flArrTime">Llega a Mérida<input id="flArrTime" type="time"></label>
     </div></fieldset>
-    <fieldset><legend>Salida de Mérida</legend><div class="row">
+    <fieldset><legend>Regreso</legend><div class="row">
       <label class="fld" for="flDepDate">Fecha<input id="flDepDate" type="date"></label>
-      <label class="fld" for="flDepTime">Hora<input id="flDepTime" type="time"></label>
       <label class="fld" for="flDepNo">Vuelo<input id="flDepNo" type="text" maxlength="20" placeholder="AM 826" autocomplete="off"></label>
+    </div><div class="row">
+      <label class="fld" for="flDepTime">Sale de Mérida<input id="flDepTime" type="time"></label>
+      <label class="fld" for="flDepLand">Hora de llegada<input id="flDepLand" type="time"></label>
     </div></fieldset>
+    <p class="fine">Cada hora, la local de su aeropuerto, como viene en el pase de abordar.</p>
     <fieldset id="flAlsoBox" hidden><legend>Mismo vuelo para</legend><div class="who" id="flAlso"></div></fieldset>
     <p class="err" id="flErr" hidden></p>
     <div class="dlg-actions"><button class="btn danger" type="button" id="flDel" hidden>Borrar vuelo</button><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit">Guardar vuelo</button></div>
