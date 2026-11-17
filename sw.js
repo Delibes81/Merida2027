@@ -2,11 +2,11 @@
 // - La página y sus archivos: primero la red (para recibir cambios) y, si no hay o tarda, la copia guardada.
 // - Librerías, tipografías y mosaicos del mapa: primero la copia guardada.
 // - Supabase y /api nunca se guardan: los datos del grupo los conserva la propia página.
-const VERSION = 'merida-v1';
+const VERSION = 'merida-v2';
 const TILES = 'merida-mapa';
 const SHELL = [
   '/', '/assets/styles.css', '/assets/config.js', '/assets/app.js', '/assets/grupo.js', '/assets/avisos.js',
-  '/assets/docs.js', '/assets/cuentas.js', '/assets/hoy.js', '/assets/mapa.js', '/favicon.svg',
+  '/assets/docs.js', '/assets/cuentas.js', '/assets/hoy.js', '/assets/tabbar.js', '/assets/mapa.js', '/favicon.svg',
   '/manifest.webmanifest', '/icons/icon-192.png',
 ];
 const STATIC_HOSTS = ['cdn.jsdelivr.net', 'cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];

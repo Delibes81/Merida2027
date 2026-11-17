@@ -563,6 +563,12 @@
 <div class="off-bar" id="offBar" role="status" hidden></div>
 <div id="toast" role="status" aria-live="polite"></div>
 
+<nav class="tabbar" id="tabbar" aria-label="Secciones (celular)"></nav>
+<dialog class="sheet" id="dlgMore" aria-labelledby="moreT">
+  <div class="sheet-head"><span class="sheet-grip" aria-hidden="true"></span><h3 id="moreT">Más secciones</h3></div>
+  <ul class="sheet-grid" id="moreList"></ul>
+</dialog>
+
 <footer><div class="wrap install" id="install" hidden>
   <p id="installTxt">Lleva el plan en tu celular: se abre como app y funciona sin señal.</p>
   <button class="btn hot" id="installBtn" type="button" hidden>Instalar la app</button>
@@ -576,6 +582,7 @@
 <script src="assets/docs.js"></script>
 <script src="assets/cuentas.js"></script>
 <script src="assets/hoy.js"></script>
+<script src="assets/tabbar.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="assets/mapa.js"></script>
 </body>

@@ -62,6 +62,18 @@
   --leg-a: #0B2A30;
   --map-edge: #FFFFFF;
   --tiles: saturate(.72) contrast(.96);
+  /* vidrio de la barra de abajo */
+  --g-fill: rgba(255, 253, 248, .66);
+  --g-rim-a: rgba(255, 255, 255, .95);
+  --g-rim-b: rgba(255, 255, 255, .25);
+  --g-sheen: rgba(255, 255, 255, .6);
+  --g-shadow: 0 18px 40px -16px rgba(11, 42, 48, .42), 0 3px 10px -3px rgba(11, 42, 48, .14), inset 0 0 0 .5px rgba(11, 42, 48, .12);
+  --g-lens: rgba(255, 255, 255, .88);
+  --g-lens-edge: rgba(11, 42, 48, .07);
+  --g-solid: #FFFDF8;
+  --tab-off: #3F5659;
+  --tab-on: var(--coral-t);
+  --sheet-bg: rgba(251, 246, 236, .86);
   --display: "Unbounded", "Arial Black", "Segoe UI", sans-serif;
   --body: "Manrope", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -113,6 +125,17 @@
   --leg-a: #F3F8F5;
   --map-edge: #06181D;
   --tiles: invert(1) hue-rotate(170deg) brightness(.92) contrast(.9) saturate(.55);
+  --g-fill: rgba(17, 50, 59, .58);
+  --g-rim-a: rgba(255, 255, 255, .34);
+  --g-rim-b: rgba(255, 255, 255, .05);
+  --g-sheen: rgba(255, 255, 255, .1);
+  --g-shadow: 0 18px 40px -14px rgba(0, 0, 0, .75), inset 0 0 0 .5px rgba(255, 255, 255, .08);
+  --g-lens: rgba(255, 255, 255, .13);
+  --g-lens-edge: rgba(255, 255, 255, .1);
+  --g-solid: #0F313A;
+  --tab-off: #B5CBCB;
+  --tab-on: var(--sun);
+  --sheet-bg: rgba(10, 36, 43, .88);
 }
 /* El color de cada bloque: --c para rellenos, --ct cuando ese color es texto. */
 .c-pink { --c: var(--pink); --ct: var(--pink-t); }
@@ -615,9 +638,79 @@ body:not(.joined) .only-in { display: none; }
 .pass-in .link { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font: 700 13px var(--body); letter-spacing: 0; text-transform: none; }
 .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 
+/* Barra de pestañas (solo celular): cápsula de vidrio flotante, al estilo de iOS, que también
+   se ve bien en Android (Chrome y Samsung Internet difuminan igual). */
+.tabbar, .sheet { display: none; }
+@media (max-width: 760px) {
+  :root { --tab-h: 62px; --tab-gap: max(10px, calc(env(safe-area-inset-bottom, 0px) - 6px)); }
+  .top nav { display: none; }
+  .top .theme { margin-left: auto; }
+  body { padding-bottom: calc(var(--tab-h) + var(--tab-gap) + 14px); }
+
+  .tabbar { display: flex; position: fixed; z-index: 40; left: 50%; bottom: var(--tab-gap); width: min(calc(100% - 24px), 440px); height: var(--tab-h); padding: 6px; gap: 2px; border-radius: 32px; isolation: isolate;
+    background: var(--g-fill); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); box-shadow: var(--g-shadow);
+    transform: translateX(-50%); transition: height .32s cubic-bezier(.2, .8, .2, 1), transform .32s cubic-bezier(.2, .8, .2, 1), opacity .2s; }
+  /* Borde de luz: brilla arriba a la izquierda y abajo, como el canto de un vidrio. */
+  .tabbar::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: 2;
+    background: linear-gradient(155deg, var(--g-rim-a), var(--g-rim-b) 38%, transparent 62%, var(--g-rim-b) 86%, var(--g-rim-a));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0); }
+  /* Brillo suave en la mitad de arriba. */
+  .tabbar::after { content: ""; position: absolute; inset: 1px; border-radius: inherit; pointer-events: none; z-index: -2; background: linear-gradient(180deg, var(--g-sheen), transparent 55%); }
+  .tab-lens { position: absolute; z-index: -1; top: 6px; bottom: 6px; left: 0; width: 0; border-radius: 26px; opacity: 0; background: var(--g-lens);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 0 0 1px var(--g-lens-edge), 0 6px 14px -8px rgba(11, 42, 48, .35);
+    transition: transform .5s cubic-bezier(.3, 1.35, .45, 1), width .5s cubic-bezier(.3, 1.35, .45, 1), opacity .25s; }
+  .tabbar.has-on .tab-lens { opacity: 1; }
+  .tab { flex: 1 1 0; min-width: 0; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; border: 0; border-radius: 26px; background: none; cursor: pointer;
+    color: var(--tab-off); text-decoration: none; font: 600 10.5px/1 var(--body); letter-spacing: .01em; -webkit-tap-highlight-color: transparent; touch-action: manipulation; -webkit-user-select: none; user-select: none; transition: color .25s, gap .3s; }
+  .tab svg { width: 24px; height: 24px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: transform .35s cubic-bezier(.3, 1.4, .5, 1), stroke-width .2s; }
+  .tab span { display: block; height: 11px; overflow: hidden; white-space: nowrap; transition: height .3s, opacity .2s; }
+  .tab[aria-current="true"] { color: var(--tab-on); }
+  .tab[aria-current="true"] svg { stroke-width: 2.2; }
+  .tab:active svg { transform: scale(.86); }
+  .tab:focus-visible { outline: 2px solid var(--focus); outline-offset: -3px; }
+  .tab-dot { position: absolute; top: 7px; left: calc(50% + 7px); width: 9px; height: 9px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 0 2px var(--g-solid); }
+  .tabbar.compact { height: 50px; }
+  .tabbar.compact .tab { gap: 0; }
+  .tabbar.compact .tab span { height: 0; opacity: 0; }
+  body.typing .tabbar { transform: translate(-50%, calc(100% + 40px)); opacity: 0; pointer-events: none; }
+
+  /* Hoja de "Más" */
+  .sheet[open] { display: block; }
+  .sheet { position: fixed; inset: auto 0 0; margin: 0 auto; width: min(100%, 560px); max-width: 100%; max-height: 85dvh; overflow-y: auto; padding: 0 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    border: 0; border-radius: 30px 30px 0 0; color: var(--fg); background: var(--sheet-bg); -webkit-backdrop-filter: blur(26px) saturate(1.8); backdrop-filter: blur(26px) saturate(1.8);
+    box-shadow: inset 0 1px 0 var(--g-rim-a), 0 -12px 40px -12px rgba(0, 0, 0, .35); animation: sheet-in .42s cubic-bezier(.2, .9, .25, 1) both; transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+  .sheet.dragging { transition: none; }
+  .sheet.closing { animation: sheet-out .22s ease-in both; }
+  .sheet::backdrop { background: var(--scrim); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: veil .3s both; }
+  .sheet.closing::backdrop { animation: veil .22s reverse both; }
+  .sheet-head { padding: 10px 4px 10px; touch-action: none; cursor: grab; }
+  .sheet-grip { display: block; width: 40px; height: 5px; border-radius: 99px; margin: 0 auto 14px; background: var(--muted); opacity: .45; }
+  .sheet-head h3 { font-size: 17px; font-weight: 700; }
+  .sheet-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding-bottom: 4px; }
+  .sheet-grid a { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 6px 13px; border-radius: 22px; text-align: center; text-decoration: none; color: var(--fg);
+    font: 700 13px/1.2 var(--body); background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); -webkit-tap-highlight-color: transparent; transition: transform .15s; }
+  .sheet-grid a:active { transform: scale(.96); }
+  .sheet-grid a[aria-current="true"] { border-color: var(--ct); box-shadow: 0 0 0 1px var(--ct); }
+  .sheet-ico { width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; background: color-mix(in srgb, var(--c) 20%, transparent); color: var(--ct); }
+  .sheet-ico svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+}
+@keyframes sheet-in { from { transform: translateY(100%); } }
+@keyframes sheet-out { to { transform: translateY(100%); } }
+@keyframes veil { from { opacity: 0; } }
+/* Sin vidrio (no lo soporta o pediste menos transparencia): fondo sólido. */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .tabbar { background: var(--g-solid); } .sheet { background: var(--bg-2); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tabbar { background: var(--g-solid); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .sheet { background: var(--bg-2); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
 #toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 60; max-width: calc(100vw - 32px); padding: 10px 18px; border-radius: 99px; background: var(--fg); color: var(--bg); font-weight: 700; font-size: 14px; box-shadow: var(--shadow-up); pointer-events: none; opacity: 0; transform: translate(-50%, 16px); transition: opacity .2s, transform .2s; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 footer { border-top: 1px solid var(--line); }
 footer .wrap { padding-block: 26px 34px; display: flex; flex-wrap: wrap; gap: 6px 20px; justify-content: space-between; font-size: 13px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } }
+/* En celular, el aviso flotante y la barra de "sin señal" van encima de la barra de pestañas. */
+@media (max-width: 760px) { #toast, .off-bar { bottom: calc(var(--tab-h) + var(--tab-gap) + 12px); } }
