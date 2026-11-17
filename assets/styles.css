@@ -205,12 +205,13 @@ main { display: flex; flex-direction: column; gap: clamp(64px, 9vw, 112px); padd
 
 /* La semana */
 .week-scroll { overflow-x: auto; scrollbar-width: thin; margin-inline: -4px; padding: 4px; }
-.week { min-width: 680px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px 8px; }
+.week { min-width: 800px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 10px 8px; }
 .day { grid-column: span 2; padding: 14px 14px 16px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 3px; min-width: 0; text-decoration: none; box-shadow: var(--shadow); transition: transform .15s, border-color .15s; }
 .day:hover { transform: translateY(-3px); border-color: var(--muted); }
 .day .dow { font: 500 12px var(--mono); letter-spacing: .14em; color: var(--muted); }
 .day .num { font: 800 38px/1.05 var(--display); letter-spacing: -.04em; }
 .day .what { font-weight: 700; font-size: 15px; margin-top: 6px; }
+.day .what, .day .when { overflow-wrap: break-word; hyphens: auto; }  /* si algo no cabe, se parte dentro de su tarjeta */
 .day .when { font-size: 13px; color: var(--muted); }
 .day.boda { background: var(--boda-day); border-color: var(--boda-line); }
 .day.boda .num { background: var(--sunset-t); -webkit-background-clip: text; background-clip: text; color: transparent; }
