@@ -609,6 +609,9 @@ body:not(.joined) .only-in { display: none; }
 .who input:checked + span { border-color: var(--aqua-t); background: color-mix(in srgb, var(--aqua) 18%, transparent); }
 .who input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
 .dlg .err { color: var(--pink-t); font-weight: 600; }
+.pass-in { position: relative; display: block; }
+.pass-in input { padding-right: 84px; }
+.pass-in .link { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font: 700 13px var(--body); letter-spacing: 0; text-transform: none; }
 .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 
 #toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 60; max-width: calc(100vw - 32px); padding: 10px 18px; border-radius: 99px; background: var(--fg); color: var(--bg); font-weight: 700; font-size: 14px; box-shadow: var(--shadow-up); pointer-events: none; opacity: 0; transform: translate(-50%, 16px); transition: opacity .2s, transform .2s; }

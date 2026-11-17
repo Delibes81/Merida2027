@@ -34,22 +34,24 @@ Para que la foto de un ticket se convierta en renglones, agrega en Vercel (*Sett
 ## Conectar Supabase (una sola vez)
 
 1. **Tablas**: en Supabase abre *SQL Editor*, pega todo `supabase/schema.sql` y dale *Run*.
-2. **Código del grupo**: en el mismo editor corre, con el código que quieras:
+2. **Contraseñas**: en el mismo editor da una a cada persona (el id es el nombre en minúsculas: `liliana`, `delibes`, `jorge`, `zamy`, `chang`, `sonia`, `takeshi`, `caro`, `lore`):
 
    ```sql
-   select set_trip_code('elige-un-codigo-largo');
+   select set_password('jorge', 'la-contraseña');
    ```
+
+   Se guardan cifradas; no las pongas en el repositorio. Para cambiar una, vuelve a correr `set_password`: los dispositivos de esa persona tendrán que entrar de nuevo.
 
 3. **Acceso anónimo**: en *Authentication → Sign In / Providers* activa *Anonymous sign-ins*.
 4. **Clave pública**: en *Project Settings → API Keys* copia la clave *publishable* (o *anon*) y pégala en `supabaseKey` dentro de `assets/config.js`.
 
-Cuando `schema.sql` cambie, vuelve a correrlo completo: está hecho para ejecutarse varias veces sin borrar datos ni el código del grupo.
+Cuando `schema.sql` cambie, vuelve a correrlo completo: está hecho para ejecutarse varias veces sin borrar datos ni contraseñas.
 
 La clave pública puede vivir en el repositorio: los datos los protegen las reglas de `schema.sql`. La clave *secret* / *service_role* nunca va en este proyecto.
 
 ### Cómo funciona el acceso
 
-Cada persona escribe el código del grupo y elige su nombre. Supabase crea una sesión anónima para ese dispositivo y la liga a esa persona; sin ese paso no se puede leer ni escribir nada. Para cambiar el código, vuelve a correr `set_trip_code`.
+Cada persona elige su nombre y escribe su contraseña (no importan mayúsculas). Supabase crea una sesión anónima para ese dispositivo y, si la contraseña es la de esa persona, la liga a ella; sin ese paso no se puede leer ni escribir nada. Tras 6 intentos fallidos con un nombre, ese nombre queda bloqueado media hora.
 
 ## Verlo en local
 

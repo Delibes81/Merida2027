@@ -286,7 +286,7 @@
       <h2>Vuelos</h2>
       <p>Cada quien registra su vuelo y aquí se ve el tablero de todos, para coordinar las llegadas y la camioneta.</p>
     </div>
-    <div class="locked">Entra con el código del grupo para ver los vuelos y registrar el tuyo. <button class="btn" type="button" data-join>Entrar</button></div>
+    <div class="locked">Entra con tu nombre y tu contraseña para ver los vuelos y registrar el tuyo. <button class="btn" type="button" data-join>Entrar</button></div>
     <div id="flBody" hidden>
       <div class="fl-bar"><p class="mono" id="flCount"></p><button class="btn hot" id="flMine" type="button">Registrar vuelo</button></div>
       <div class="boards">
@@ -389,7 +389,7 @@
         </ul>
       </div>
     </div>
-    <p class="fine" id="todoNote">Las palomitas se guardan solo en este dispositivo. <button class="link" type="button" data-join>Entra con el código del grupo</button> para compartirlas con todos.</p>
+    <p class="fine" id="todoNote">Las palomitas se guardan solo en este dispositivo. <button class="link" type="button" data-join>Entra con tu contraseña</button> para compartirlas con todos.</p>
     <p class="fine" id="todoSync" hidden>Sincronizado con el grupo. En lo de cada quien solo cambia tu palomita y se ve cuántos van.</p>
   </section>
 
@@ -436,7 +436,7 @@
         <div><p class="eyebrow">Gastos del grupo</p><b class="ledger-total" id="exTotal">$0</b></div>
         <button class="btn hot" id="exAdd" type="button">Agregar gasto</button>
       </div>
-      <div class="locked">Entra con el código del grupo para registrar gastos. Se dividen por persona y las cuentas se hacen por pareja. <button class="btn" type="button" data-join>Entrar</button></div>
+      <div class="locked">Entra con tu nombre y tu contraseña para registrar gastos. Se dividen por persona y las cuentas se hacen por pareja. <button class="btn" type="button" data-join>Entrar</button></div>
       <div id="exBody" hidden>
         <ul class="ex-list" id="exList"></ul>
         <div class="ledger-cols">
@@ -459,7 +459,7 @@
     <div class="sec-head">
       <p class="eyebrow">Tres parejas y tres por su cuenta</p>
       <h2>El grupo</h2>
-      <p id="crewSum">Cada quien captura su vuelo para saber a qué hora llegamos todos. <button class="link" type="button" data-join>Entra con el código del grupo</button> para verlos.</p>
+      <p id="crewSum">Cada quien captura su vuelo para saber a qué hora llegamos todos. <button class="link" type="button" data-join>Entra con tu contraseña</button> para verlos.</p>
     </div>
     <ul class="crew" id="crew"></ul>
   </section>
@@ -470,9 +470,10 @@
 <dialog class="dlg" id="dlgJoin" aria-labelledby="joinT">
   <form id="joinForm">
     <h3 id="joinT">Entrar al grupo</h3>
-    <p>Con el código del grupo ves los vuelos, los gastos y los pendientes de todos. Pídeselo a Delibes o a Jorge.</p>
-    <label class="fld" for="joinCode">Código del grupo<input id="joinCode" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" required></label>
+    <p>Elige tu nombre y escribe tu contraseña para ver y registrar vuelos, gastos y pendientes. Si no la tienes, pídesela a Delibes.</p>
     <fieldset><legend>¿Quién eres?</legend><div class="who" id="joinWho"></div></fieldset>
+    <input class="sr" id="joinUser" name="username" type="text" autocomplete="username" tabindex="-1" aria-hidden="true">
+    <label class="fld" for="joinPass">Tu contraseña<span class="pass-in"><input id="joinPass" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" required><button class="link" type="button" id="joinShow" aria-pressed="false">Mostrar</button></span></label>
     <p class="err" id="joinErr" hidden></p>
     <div class="dlg-actions"><button class="btn" type="button" data-close>Cancelar</button><button class="btn hot" type="submit" id="joinGo">Entrar</button></div>
   </form>
@@ -481,7 +482,7 @@
 <dialog class="dlg" id="dlgMe" aria-labelledby="meT">
   <form id="meForm">
     <h3 id="meT">Hola</h3>
-    <p>En este dispositivo entraste al grupo. Si eres otra persona, sal y vuelve a entrar con tu nombre.</p>
+    <p>En este dispositivo entraste al grupo. Si eres otra persona, sal y vuelve a entrar con tu nombre y tu contraseña.</p>
     <div class="dlg-actions"><button class="btn" type="button" id="leaveBtn">Salir en este dispositivo</button><button class="btn hot" type="button" data-close>Listo</button></div>
   </form>
 </dialog>

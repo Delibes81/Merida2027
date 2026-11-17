@@ -3,11 +3,12 @@
 -- Cómo usarlo: en Supabase abre SQL Editor, pega este archivo completo y dale Run.
 -- Se puede correr varias veces sin romper nada.
 --
--- Después de correrlo, define el código del grupo (una sola vez, en el mismo editor):
+-- Cada persona entra con su nombre y su propia contraseña. Para darla o cambiarla,
+-- en el mismo editor (solo funciona ahí, nunca desde la página):
 --
---     select set_trip_code('elige-un-codigo-largo');
+--     select set_password('jorge', 'la-contraseña');
 --
--- Ese código es lo que cada quien escribe para entrar. No lo guardes en el repositorio.
+-- Las contraseñas se guardan cifradas y no van en el repositorio.
 
 -- ─────────────────────────────── Tablas ───────────────────────────────
 
@@ -28,11 +29,24 @@ create table if not exists public.devices (
   joined_at timestamptz not null default now()
 );
 
--- Código del grupo. Nadie puede leer esta tabla desde la página.
-create table if not exists public.trip_secret (
-  id   boolean primary key default true check (id),
-  code text not null
+-- Contraseña de cada persona, cifrada con bcrypt. Nadie puede leer esta tabla desde la página.
+create extension if not exists pgcrypto with schema extensions;
+create table if not exists public.member_secret (
+  member_id text primary key references public.members (id),
+  hash      text not null,
+  set_at    timestamptz not null default now()
 );
+-- Intentos fallidos, para frenar a quien intente adivinar.
+create table if not exists public.login_fails (
+  member_id text not null references public.members (id),
+  at        timestamptz not null default now()
+);
+create index if not exists login_fails_member_at on public.login_fails (member_id, at);
+-- Solo cuenta el dispositivo que entró con contraseña (los del antiguo código de grupo vuelven a entrar).
+alter table public.devices add column if not exists by_password boolean not null default false;
+-- El código de grupo ya no se usa.
+drop function if exists public.set_trip_code(text);
+drop table if exists public.trip_secret;
 
 create table if not exists public.todos (
   id         text primary key,
@@ -112,32 +126,41 @@ returns text
 language sql stable security definer
 set search_path = public
 as $$
-  select member_id from public.devices where user_id = auth.uid()
+  select member_id from public.devices where user_id = auth.uid() and by_password
 $$;
 
--- Entrar al grupo: valida el código y liga este dispositivo a una persona.
-create or replace function public.join_trip(p_code text, p_member text)
+-- Entrar: valida la contraseña de esa persona y liga este dispositivo a ella.
+-- Devuelve el id de la persona, o 'x:contrasena', 'x:intentos' o 'x:sin_contrasena'.
+-- (No lanza error al fallar para que el intento fallido quede registrado.)
+drop function if exists public.join_trip(text, text);
+create function public.join_trip(p_member text, p_password text)
 returns text
 language plpgsql security definer
 set search_path = public
 as $$
+declare h text;
 begin
   if auth.uid() is null then
     raise exception 'sin_sesion';
   end if;
-  if not exists (
-    select 1 from public.trip_secret
-    where lower(btrim(code)) = lower(btrim(coalesce(p_code, '')))
-  ) then
-    perform pg_sleep(1);  -- frena los intentos a ciegas
-    raise exception 'codigo_incorrecto';
+  if (select count(*) from public.login_fails where member_id = p_member and at > now() - interval '30 minutes') >= 6 then
+    return 'x:intentos';
   end if;
-  if not exists (select 1 from public.members where id = p_member) then
-    raise exception 'persona_desconocida';
+  select hash into h from public.member_secret where member_id = p_member;
+  if h is null then
+    return 'x:sin_contrasena';
   end if;
-  insert into public.devices (user_id, member_id)
-  values (auth.uid(), p_member)
-  on conflict (user_id) do update set member_id = excluded.member_id, joined_at = now();
+  -- Sin distinguir mayúsculas, que el celular a veces pone la primera.
+  if extensions.crypt(lower(btrim(coalesce(p_password, ''))), h) <> h then
+    insert into public.login_fails (member_id) values (p_member);
+    delete from public.login_fails where at < now() - interval '1 day';
+    perform pg_sleep(1);
+    return 'x:contrasena';
+  end if;
+  delete from public.login_fails where member_id = p_member;
+  insert into public.devices (user_id, member_id, by_password)
+  values (auth.uid(), p_member, true)
+  on conflict (user_id) do update set member_id = excluded.member_id, by_password = true, joined_at = now();
   return p_member;
 end
 $$;
@@ -151,23 +174,30 @@ as $$
   delete from public.devices where user_id = auth.uid()
 $$;
 
--- Definir o cambiar el código del grupo. Solo corre desde el SQL Editor.
-create or replace function public.set_trip_code(p_code text)
+-- Dar o cambiar la contraseña de una persona. Solo corre desde el SQL Editor.
+-- Al cambiarla, sus otros dispositivos tienen que volver a entrar.
+create or replace function public.set_password(p_member text, p_password text)
 returns text
 language plpgsql security definer
 set search_path = public
 as $$
 begin
-  if char_length(btrim(coalesce(p_code, ''))) < 6 then
-    raise exception 'El código debe tener al menos 6 caracteres';
+  if not exists (select 1 from public.members where id = p_member) then
+    raise exception 'No hay nadie con id %', p_member;
   end if;
-  insert into public.trip_secret (id, code) values (true, btrim(p_code))
-  on conflict (id) do update set code = excluded.code;
-  return 'Código guardado';
+  if char_length(btrim(coalesce(p_password, ''))) < 6 then
+    raise exception 'La contraseña debe tener al menos 6 caracteres';
+  end if;
+  insert into public.member_secret (member_id, hash)
+  values (p_member, extensions.crypt(lower(btrim(p_password)), extensions.gen_salt('bf')))
+  on conflict (member_id) do update set hash = excluded.hash, set_at = now();
+  delete from public.devices where member_id = p_member;
+  delete from public.login_fails where member_id = p_member;
+  return 'Contraseña guardada para ' || p_member;
 end
 $$;
 
-revoke all on function public.set_trip_code(text) from public, anon, authenticated;
+revoke all on function public.set_password(text, text) from public, anon, authenticated;
 revoke all on function public.join_trip(text, text) from public, anon;
 revoke all on function public.leave_trip() from public, anon;
 revoke all on function public.my_member() from public, anon;
@@ -176,20 +206,21 @@ grant execute on function public.leave_trip() to authenticated;
 grant execute on function public.my_member() to authenticated;
 
 -- ─────────────────────────────── Permisos ───────────────────────────────
--- Todo queda cerrado salvo para quien ya entró con el código.
+-- Todo queda cerrado salvo para quien ya entró con su contraseña.
 
 alter table public.members     enable row level security;
 alter table public.devices     enable row level security;
-alter table public.trip_secret enable row level security;
+alter table public.member_secret enable row level security;
+alter table public.login_fails enable row level security;
 alter table public.todos       enable row level security;
 alter table public.flights     enable row level security;
 alter table public.expenses    enable row level security;
 alter table public.rsvps       enable row level security;
 alter table public.stays       enable row level security;
 
-revoke all on public.members, public.devices, public.trip_secret, public.todos,
+revoke all on public.members, public.devices, public.member_secret, public.login_fails, public.todos,
               public.flights, public.expenses, public.rsvps, public.stays from anon;
-revoke all on public.trip_secret from authenticated;
+revoke all on public.member_secret, public.login_fails from authenticated;
 
 grant select                 on public.members  to authenticated;
 grant select                 on public.devices  to authenticated;

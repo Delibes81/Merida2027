@@ -92,6 +92,16 @@
   $('joinWho').innerHTML = MEMBERS.map(function (m) {
     return '<label><input type="radio" name="who" value="' + m.id + '" required><span>' + av(m) + esc(m.name) + '</span></label>';
   }).join('');
+  // El nombre va también en un campo de usuario oculto para que el celular pueda guardar la contraseña.
+  $('joinWho').addEventListener('change', function (e) {
+    $('joinUser').value = byId[e.target.value] ? byId[e.target.value].name : '';
+    $('joinPass').focus();
+  });
+  $('joinShow').addEventListener('click', function () {
+    var show = $('joinPass').type === 'password';
+    $('joinPass').type = show ? 'text' : 'password';
+    this.textContent = show ? 'Ocultar' : 'Mostrar'; this.setAttribute('aria-pressed', show);
+  });
 
   function openJoin() {
     fail($('joinErr'), ready ? '' : 'La conexión con el grupo todavía no está configurada en esta página.');
@@ -109,7 +119,7 @@
     e.preventDefault();
     if (!ready) return;
     var who = (all('input[name=who]:checked', this)[0] || {}).value;
-    var code = $('joinCode').value;
+    var pass = $('joinPass').value, name = byId[who] ? byId[who].name : '';
     fail($('joinErr'), ''); busy(this, true);
     try {
       var s = (await sb.auth.getSession()).data.session;
@@ -117,17 +127,20 @@
         var a = await sb.auth.signInAnonymously();
         if (a.error) throw { step: 'anon', error: a.error };
       }
-      var r = await sb.rpc('join_trip', { p_code: code, p_member: who });
+      var r = await sb.rpc('join_trip', { p_member: who, p_password: pass });
       if (r.error) throw { step: 'join', error: r.error };
-      close($('dlgJoin')); $('joinCode').value = '';
+      if (/^x:/.test(r.data || '')) throw { step: 'pass', code: r.data };
+      close($('dlgJoin')); $('joinPass').value = '';
       await enter(r.data);
       toast('Listo, ' + me.name + '. Ya estás en el grupo.');
     } catch (err) {
       var m = String((err.error && (err.error.message || err.error.code)) || err.message || '');
       var msg = 'No se pudo conectar. Revisa tu conexión e intenta de nuevo.';
-      if (/codigo_incorrecto/.test(m)) msg = 'Ese código no es. Revísalo con Delibes o Jorge.';
+      if (err.code === 'x:contrasena') msg = 'Esa no es la contraseña de ' + name + '. Revísala con Delibes.';
+      else if (err.code === 'x:intentos') msg = 'Demasiados intentos con ' + name + '. Espera media hora o pídele a Delibes que te la confirme.';
+      else if (err.code === 'x:sin_contrasena') msg = name + ' todavía no tiene contraseña. Pídesela a Delibes.';
       else if (err.step === 'anon') msg = 'Falta activar el acceso anónimo en Supabase (Authentication → Sign In / Providers → Anonymous).';
-      else if (/join_trip|PGRST202|schema cache/.test(m)) msg = 'Falta crear las tablas en Supabase: corre supabase/schema.sql en el SQL Editor.';
+      else if (/join_trip|PGRST202|schema cache/.test(m)) msg = 'Falta actualizar la base: corre de nuevo supabase/schema.sql en el SQL Editor de Supabase.';
       fail($('joinErr'), msg);
     }
     busy(this, false);
