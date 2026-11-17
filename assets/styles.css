@@ -78,6 +78,9 @@
   --body: "Manrope", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --r: 20px;
+  /* La franja de la hora y la batería (en la app instalada en iPhone) y la barra de arriba. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --top-h: 56px;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -146,10 +149,11 @@
 .c-fg { --c: var(--fg); --ct: var(--fg); --on-c: var(--bg); }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+/* Al saltar a una sección, su inicio queda justo debajo de la barra de arriba (y de la franja de la hora, si la hay). */
+html { scroll-behavior: smooth; scroll-padding-top: calc(var(--safe-top) + var(--top-h) + 20px); }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--body); -webkit-font-smoothing: antialiased; }
 /* En la app instalada en iPhone la hora y la batería se pintan en blanco: su franja va siempre oscura. */
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--status); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: var(--safe-top); z-index: 30; background: var(--status); }
 .wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
 ul, ol { padding: 0; list-style: none; }
@@ -161,8 +165,8 @@ a { color: inherit; }
 .grad { background: var(--sunset-t); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 /* Barra superior */
-.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--glass); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
-.top .wrap { display: flex; align-items: center; gap: 16px; height: 56px; }
+.top { position: sticky; top: var(--safe-top); z-index: 20; background: var(--glass); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 16px; height: var(--top-h); }
 .theme { flex: none; position: relative; width: 52px; height: 30px; padding: 0; border-radius: 99px; border: 1px solid var(--line); background: var(--card-2); cursor: pointer; transition: border-color .15s; }
 .theme::before { content: ""; position: absolute; inset: -8px -4px; }
 .theme:hover { border-color: var(--muted); }

@@ -31,7 +31,9 @@
   // Lo de todos los días: hoy (durante el viaje) o la semana, vuelos, costos y avisos (o la boda si aún no entras).
   function slots() { return [shown('hoy') ? 'hoy' : 'semana', 'vuelos', 'costos', T.me ? 'avisos' : 'boda']; }
 
-  var current = null, key = '', lock = null, jumpUntil = 0;
+  // jump: salto en curso tras tocar una pestaña. Dura hasta que el desplazamiento se detiene,
+  // que en saltos largos (de Costos a Semana) toma más de un segundo.
+  var current = null, key = '', jump = null, settle = 0;
 
   function paintBar() {
     var s = slots(), k = s.join();
@@ -70,12 +72,18 @@
   function goTo(id) {
     var el = $(id);
     if (!el) return;
-    lock = { id: id, until: Date.now() + 1400 };
-    jumpUntil = Date.now() + 1400;  // el desplazamiento que provoca un toque no compacta la barra
+    jump = { id: id, until: Date.now() + 4000 };
+    clearTimeout(settle); settle = setTimeout(endJump, 300);  // por si ya estaba ahí y no hay desplazamiento
     bar.classList.remove('compact');
     current = id; mark(); dot();
     el.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
     try { history.replaceState(null, '', '#' + id); } catch (e) {}
+  }
+
+  // Al terminar el salto, la pestaña queda en su destino (sin pasar por las secciones intermedias).
+  function endJump() {
+    if (!jump) return;
+    current = jump.id; jump = null; mark(); dot();
   }
 
   bar.addEventListener('click', function (e) {
@@ -140,8 +148,8 @@
       es.forEach(function (e) {
         if (!e.isIntersecting) return;
         var id = e.target.id === 'inicio' ? null : e.target.id;
-        if (lock && Date.now() < lock.until && id !== lock.id) return;
-        lock = null; current = id; mark(); dot();
+        if (jump) return;  // durante un salto manda el destino
+        current = id; mark(); dot();
       });
     }, { rootMargin: '-45% 0px -50% 0px' });
     ['inicio'].concat(SECTIONS.map(function (s) { return s.id; })).forEach(function (id) { if ($(id)) spy.observe($(id)); });
@@ -156,7 +164,11 @@
       ticking = false;
       var y = window.scrollY, d = y - lastY, end = y + window.innerHeight > document.documentElement.scrollHeight - 80;
       lastY = y;
-      if (Date.now() < jumpUntil) { acc = 0; return; }
+      if (jump) {  // el desplazamiento que provoca un toque no compacta la barra
+        acc = 0; clearTimeout(settle);
+        if (Date.now() > jump.until) endJump(); else settle = setTimeout(endJump, 180);
+        return;
+      }
       acc = d > 0 ? Math.max(0, acc) + d : Math.min(0, acc) + d;
       if (y < 160 || end || acc < -24) bar.classList.remove('compact');
       else if (acc > 48) bar.classList.add('compact');
