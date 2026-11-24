@@ -626,7 +626,22 @@ body:not(.joined) .only-in { display: none; }
 .dlg legend { padding: 0; margin-bottom: 8px; }
 .fld { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .fld input, .fld select { width: 100%; min-width: 0; padding: 11px 12px; font: 600 16px var(--body); letter-spacing: 0; text-transform: none; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; }
-.dlg .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px; }
+.dlg .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(128px, 100%), 1fr)); gap: 10px; }
+.dlg .row > * { min-width: 0; }
+/* Fecha y hora: en iPhone el control nativo trae un ancho mínimo propio que se
+   sale de la columna y, vacío, se encoge. Se le quita la apariencia nativa
+   (el selector sigue abriendo igual) y se le da la altura de los demás campos. */
+.fld input:not([type="file"]), .fld select { height: 48px; }
+.fld input[type="date"], .fld input[type="time"] { display: block; text-align: left; }
+@supports (-webkit-touch-callout: none) {
+  .fld input[type="date"], .fld input[type="time"] { -webkit-appearance: none; appearance: none; }
+}
+.fld input::-webkit-date-and-time-value { text-align: left; margin: 0; }
+.fld input:focus-visible, .fld select:focus-visible, .fld textarea:focus-visible { outline-offset: 2px; border-radius: 12px; }
+/* Con un diálogo abierto, la página de atrás no se mueve: en iPhone, si se
+   desplaza cuando sale el teclado, el cursor queda dibujado fuera de su campo. */
+html:has(dialog[open]) { overflow: hidden; scroll-behavior: auto; }
+.dlg { overscroll-behavior: contain; }
 .dlg fieldset .row + .row { margin-top: 10px; }
 .who { display: flex; flex-wrap: wrap; gap: 8px; }
 .presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
