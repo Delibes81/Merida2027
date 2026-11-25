@@ -164,6 +164,8 @@
       ticking = false;
       var y = window.scrollY, d = y - lastY, end = y + window.innerHeight > document.documentElement.scrollHeight - 80;
       lastY = y;
+      // Congelar la página por un diálogo y regresarla a su lugar no es desplazarse.
+      if (document.body.classList.contains('frozen') || Date.now() - (window.tripThawAt || 0) < 400) { acc = 0; return; }
       if (jump) {  // el desplazamiento que provoca un toque no compacta la barra
         acc = 0; clearTimeout(settle);
         if (Date.now() > jump.until) endJump(); else settle = setTimeout(endJump, 180);

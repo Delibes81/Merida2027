@@ -641,6 +641,7 @@ body:not(.joined) .only-in { display: none; }
 /* Con un diálogo abierto, la página de atrás no se mueve: en iPhone, si se
    desplaza cuando sale el teclado, el cursor queda dibujado fuera de su campo. */
 html:has(dialog[open]) { overflow: hidden; scroll-behavior: auto; }
+body.frozen { position: fixed; left: 0; right: 0; }
 .dlg { overscroll-behavior: contain; }
 .dlg fieldset .row + .row { margin-top: 10px; }
 .who { display: flex; flex-wrap: wrap; gap: 8px; }

@@ -15,6 +15,29 @@
   // Tema claro (el que abre) u oscuro. La elección se guarda en el teléfono; index.html la aplica antes de pintar.
   var root = document.documentElement, themeBtn = $('themeBtn');
   var token = window.tripToken = function (name) { return getComputedStyle(root).getPropertyValue(name).trim(); };
+
+  // En celular, con un diálogo abierto la página de atrás se congela donde estaba.
+  // Si el iPhone la desplaza al salir el teclado, dibuja el cursor fuera del campo.
+  // Se hace al momento de abrir y cerrar (no después), para que un salto de sección
+  // pedido justo al cerrar no lo deshaga el regreso a la posición guardada.
+  (function () {
+    if (!window.HTMLDialogElement || !window.matchMedia('(pointer: coarse)').matches) return;
+    var keep = 0, frozen = false, P = HTMLDialogElement.prototype, show = P.showModal, shut = P.close;
+    function freeze() {
+      if (frozen) return;
+      keep = window.scrollY; frozen = true;
+      document.body.style.top = -keep + 'px'; document.body.classList.add('frozen');
+    }
+    function thaw() {
+      if (!frozen || document.querySelector('dialog.dlg[open]')) return;
+      frozen = false; window.tripThawAt = Date.now();
+      document.body.classList.remove('frozen'); document.body.style.top = '';
+      root.style.scrollBehavior = 'auto'; window.scrollTo(0, keep); root.style.scrollBehavior = '';
+    }
+    P.showModal = function () { var r = show.apply(this, arguments); if (this.classList.contains('dlg')) freeze(); return r; };
+    P.close = function () { var r = shut.apply(this, arguments); thaw(); return r; };
+    document.addEventListener('close', thaw, true);  // también al cerrar con el gesto o la tecla de regresar
+  })();
   function syncTheme() {
     var dark = root.getAttribute('data-theme') === 'dark';
     themeBtn.setAttribute('aria-checked', dark);
